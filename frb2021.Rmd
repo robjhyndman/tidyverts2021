@@ -98,6 +98,50 @@ global_economy
 \begin{alertblock}{}\fontsize{9}{9}\sf Measured variables\phantom{dg}\end{alertblock}
 \end{textblock}}
 
+## Australian tourism regions
+
+```{r ausmap, echo=FALSE, message=FALSE, width=20, height=18, out.height="90%"}
+library(sf)
+# Use Okabe-Ito color-blind friendly color palette
+state_colors <- c(
+  `New South Wales` = "#56b4e9",
+  `Victoria` = "#0072b2",
+  `Queensland` = "#009e73",
+  `South Australia` = "#f0e442",
+  `Northern Territory` = "#d55e00",
+  `Western Australia` = "#e69f00",
+  `Tasmania` = "#cc79a7",
+  `Australian Capital Territory` = "#cccccc"
+)
+read_sf("tourism/Tourism_Regions_2020.shp") %>%
+  rename(State = "STE_NAME16") %>%
+  ggplot() +
+  geom_sf(aes(fill = State), alpha = 0.8) +
+  theme_void() +
+  scale_fill_manual(values = state_colors)
+```
+
+\only<2>{\begin{textblock}{6.5}(9.1,1.4)
+\begin{block}{}\fontsize{12}{12}\sf
+  \begin{itemize}\itemsep=0cm\parskip=0cm
+    \item Quarterly data on visitor nights: 1998 -- 2017
+    \item From \textit{National Visitor Survey}, interviews of 120,000 Australians aged 15+.
+    \item Geographical hierarchy split by
+    \begin{itemize}
+    \item 8 states and territories
+    \item 76 regions
+    \end{itemize}
+    \item Purpose:
+    \begin{itemize}
+    \item Holidays
+    \item Business
+    \item Visiting friends \& relatives
+    \item Other
+    \end{itemize}
+  \end{itemize}
+\end{block}
+\end{textblock}}
+
 ## `tsibble` objects
 
 \fontsize{10}{11.3}\sf
