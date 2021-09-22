@@ -1,5 +1,5 @@
 ---
-title: "Time series analysis using R"
+title: "Feasts & fables: time series analysis using R"
 author: "Rob J Hyndman"
 date: "FRB 28 Sep 2021"
 toc: true
@@ -28,13 +28,13 @@ library(patchwork)
 library(glue)
 library(stringr)
 
-# Colours to be viridis for continuous scales and Okabe for discrete scales
+# Colors to be viridis for continuous scales and Okabe for discrete scales
 options(
   digits = 3,
   width = 85,
-  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.color = "viridis",
   ggplot2.continuous.fill = "viridis",
-  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.color = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
   ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
 )
 
@@ -176,7 +176,7 @@ tourism
 
 * It works with tidyverse functions.
 
-## Example: Australian prison population
+## Australian prison population
 
 \centerline{\includegraphics[height=8cm]{Beechworth_prison}}
 
@@ -656,7 +656,7 @@ sim <- fit %>%
   as_tibble() %>%
   mutate(Month = as.Date(Month))
 # Nice colors
-cols <- scale_colour_manual(
+cols <- scale_color_manual(
   values = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442", sample(rainbow(93))),
   breaks = paste("Future", 1:100),
   name = " "
@@ -680,27 +680,27 @@ p1 <- austa %>%
   ) +
   ylim(min(austa$Visitors, sim$.sim, na.rm = TRUE), max(austa$Visitors, sim$.sim, na.rm = TRUE))
 p2 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+  geom_line(aes(y = .sim, group = replicate, color = replicate),
     data = sim %>% filter(.rep <= 1)
   )
 p3 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+  geom_line(aes(y = .sim, group = replicate, color = replicate),
     data = sim %>% filter(.rep <= 2)
   )
 p4 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+  geom_line(aes(y = .sim, group = replicate, color = replicate),
     data = sim %>% filter(.rep <= 3)
   )
 p5 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+  geom_line(aes(y = .sim, group = replicate, color = replicate),
     data = sim %>% filter(.rep <= 10)
   )
 p6 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, colour = replicate), alpha = 0.5, data = sim) +
-  guides(colour = "none")
+  geom_line(aes(y = .sim, group = replicate, color = replicate), alpha = 0.5, data = sim) +
+  guides(color = "none")
 p7 <- p1 +
-  geom_line(aes(y = .sim, group = replicate, colour = replicate), alpha = 0.5, col = "gray", data = sim) +
-  guides(colour = "none")
+  geom_line(aes(y = .sim, group = replicate, color = replicate), alpha = 0.5, col = "gray", data = sim) +
+  guides(color = "none")
 p8 <- p7 + autolayer(fc, level = c(50, 90))
 p9 <- p8 + coord_cartesian(xlim = as.Date(c("2013-01-01", "2021-08-01"))) +
   scale_x_date(
@@ -710,7 +710,7 @@ p9 <- p8 + coord_cartesian(xlim = as.Date(c("2013-01-01", "2021-08-01"))) +
   )
 p10 <- p9 +
   geom_line(
-    colour = "black",
+    color = "black",
     data = austa %>% filter(Month >= yearmonth("2018 Jan")) %>% mutate(Month = as.Date(Month))
   )
 aligned_plots <- align_patches(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
@@ -869,7 +869,7 @@ holiday_fc %>%
   filter(State == "VIC") %>%
   autoplot(holidays, level = NULL) +
   labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
-  guides(colour = guide_legend(title = "Forecast"))
+  guides(color = guide_legend(title = "Forecast"))
 ```
 
 
@@ -881,7 +881,7 @@ holiday_fc %>%
   filter(State == "VIC", .model == "arima") %>%
   autoplot(holidays) +
   labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
-  guides(colour = guide_legend(title = "Forecast"))
+  guides(color = guide_legend(title = "Forecast"))
 ```
 
 ## Prediction intervals
@@ -940,7 +940,7 @@ vic_fc <- vic_fit %>%
 vic_fc %>%
   autoplot(vic_holidays, level = NULL) +
   labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
-  guides(colour = guide_legend(title = "Forecast"))
+  guides(color = guide_legend(title = "Forecast"))
 ```
 
 ## Measures of forecast accuracy
@@ -1512,7 +1512,7 @@ fc %>%
  * Forecasting textbook using fable package: **OTexts.com/fpp3**
 
 \begin{textblock}{8}(7.6,4.8)
-\begin{alertblock}{Find me at ...}
+\begin{alertblock}{Find me at \dots}
 \href{https://twitter.com/robjhyndman}{\faicon{twitter} @robjhyndman}
 
 \href{https://github.com/robjhyndman}{\faicon{github}  @robjhyndman}
