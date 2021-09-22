@@ -1,0 +1,6 @@
+.Rproj.user
+*_cache/
+*_files/
+startup.txt
+titlepage.png
+*.log

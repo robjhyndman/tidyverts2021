@@ -1,0 +1,1481 @@
+---
+title: "Time series analysis using R"
+author: "Rob J Hyndman"
+date: "FRB 28 Sep 2021"
+toc: true
+classoption: aspectratio=169
+output:
+  binb::monash:
+    colortheme: monashwhite
+    fig_width: 8
+    fig_height: 3.3
+    keep_tex: no
+    includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = TRUE, warning = FALSE, cache = TRUE,
+  dev.args = list(pointsize = 9)
+)
+```
+
+```{r packages, echo=FALSE, include=FALSE}
+# Load packages
+library(fpp3)
+library(patchwork)
+library(glue)
+library(stringr)
+
+# Colours to be viridis for continuous scales and Okabe for discrete scales
+options(
+  digits = 3,
+  width = 85,
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis",
+  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
+)
+
+# Neater data sets
+global_economy <- global_economy %>%
+  select(Year, Country, GDP, Imports, Exports, Population)
+tourism <- tsibble::tourism %>%
+  mutate(
+    State = recode(State,
+      "Australian Capital Territory" = "ACT",
+      "New South Wales" = "NSW",
+      "Northern Territory" = "NT",
+      "Queensland" = "QLD",
+      "South Australia" = "SA",
+      "Tasmania" = "TAS",
+      "Victoria" = "VIC",
+      "Western Australia" = "WA"
+    ),
+    Region = stringr::str_remove(Region, "Australia's ")
+  )
+```
+
+# tsibble: Time series data
+
+## Tidyverts packages
+
+\begin{textblock}{3.8}(11,0)\begin{alertblock}{}\Large\textbf{tidyverts.org}\end{alertblock}\end{textblock}
+
+\placefig{3}{1.4}{width=2.5cm}{tsibble.png}
+\placefig{5.5}{1.4}{width=2.5cm}{tsibbledata.png}
+\placefig{8}{1.4}{width=2.5cm}{feasts.png}
+\placefig{10.5}{1.4}{width=2.5cm}{fable.png}
+
+\pause\vspace*{2.9cm}\fontsize{7}{8}\sf
+
+```r
+library(fpp3)
+```
+
+\vspace*{-0.4cm}
+\begin{alltt}
+\input{startup.txt}
+\end{alltt}
+
+
+## `tsibble` objects
+
+\fontsize{10}{11.2}\sf
+
+```{r, echo = TRUE}
+global_economy
+```
+
+\only<2->{\begin{textblock}{.75}(2.15,3.77)
+\begin{alertblock}{}\fontsize{9}{9}\sf Index\phantom{dg}\end{alertblock}
+\end{textblock}}
+\only<3->{\begin{textblock}{1.6}(3.28,3.77)
+\begin{alertblock}{}\fontsize{9}{9}\sf Key\phantom{dg}\end{alertblock}
+\end{textblock}}
+\only<4>{\begin{textblock}{6.7}(5.5,3.77)
+\begin{alertblock}{}\fontsize{9}{9}\sf Measured variables\phantom{dg}\end{alertblock}
+\end{textblock}}
+
+## `tsibble` objects
+
+\fontsize{10}{11.3}\sf
+
+```{r, echo = TRUE}
+tourism
+```
+
+\only<2->{\begin{textblock}{1.1}(2.1,3.7)
+\begin{alertblock}{}\fontsize{10}{10}\sf Index\phantom{dg}\end{alertblock}
+\end{textblock}}
+\only<3->{\begin{textblock}{3.9}(3.65,3.7)
+\begin{alertblock}{}\fontsize{10}{10}\sf Keys\phantom{dg}\end{alertblock}
+\end{textblock}}
+\only<4>{\begin{textblock}{1.5}(7.95,3.7)
+\begin{alertblock}{}\fontsize{10}{10}\sf Measure\phantom{dg}\end{alertblock}
+\end{textblock}}
+
+\begin{textblock}{3}(9,5)
+\begin{block}{}\fontsize{10}{10}\sf Domestic visitor nights in thousands by state/region and purpose.\phantom{dg}\end{block}
+\end{textblock}
+
+## `tsibble` objects
+
+* A `tsibble` allows storage and manipulation of multiple time series in R.
+
+* It contains:
+
+  + An index: time information about the observation
+  + Measured variable(s): numbers of interest
+  + Key variable(s): optional unique identifiers for each series
+
+* It works with tidyverse functions.
+
+## Example: Australian prison population
+
+\centerline{\includegraphics[height=8cm]{Beechworth_prison}}
+
+## Read a csv file and convert to a tsibble {-}
+\fontsize{10}{11}\sf
+
+```{r prison, message=FALSE}
+prison <- readr::read_csv("data/prison_population.csv")
+```
+```{r prison2a, dependson="prison", echo=FALSE, message=FALSE}
+prison
+```
+## Read a csv file and convert to a tsibble {-}
+\fontsize{10}{11}\sf
+
+```{r prison3, message=FALSE}
+prison <- readr::read_csv("data/prison_population.csv") %>%
+  mutate(Quarter = yearquarter(date))
+```
+
+```{r prison3a, dependson="prison3", echo=FALSE, message=FALSE}
+prison
+```
+
+## Read a csv file and convert to a tsibble {-}
+\fontsize{10}{11}\sf
+
+```{r prison4, message=FALSE}
+prison <- readr::read_csv("data/prison_population.csv") %>%
+  mutate(Quarter = yearquarter(date)) %>%
+  select(-date)
+```
+
+```{r prison4a, dependson="prison4", echo=FALSE, message=FALSE}
+prison
+```
+
+## Read a csv file and convert to a tsibble {-}
+\fontsize{10}{11}\sf
+
+```{r prison5, message=FALSE}
+prison <- readr::read_csv("data/prison_population.csv") %>%
+  mutate(Quarter = yearquarter(date)) %>%
+  select(-date) %>%
+  as_tsibble(
+    index = Quarter,
+    key = c(state, gender, legal, indigenous)
+  )
+```
+
+```{r prison5a, dependson="prison5", echo=FALSE, message=FALSE}
+prison
+```
+
+## The `tsibble` index
+
+Common time index variables can be created with these functions:
+
+###
+```{r tstable2, echo=FALSE}
+tribble(
+  ~`Frequency`, ~Function,
+  "Annual", "`start:end`",
+  "Quarterly", "`yearquarter()`",
+  "Monthly", "`yearmonth()`",
+  "Weekly", "`yearweek()`",
+  "Daily", "`as_date()`, `ymd()`",
+  "Sub-daily", "`as_datetime()`"
+) %>%
+  knitr::kable(booktabs = TRUE)
+```
+
+
+# feasts: Data visualization
+
+## Australian holidays
+\fontsize{9}{10}\sf
+
+```{r tourism}
+tourism
+```
+
+## Australian holidays
+\fontsize{9}{10}\sf
+
+```{r holidays}
+holidays <- tourism %>%
+  filter(Purpose == "Holiday") %>%
+  group_by(State) %>%
+  summarise(Trips = sum(Trips))
+```
+
+```{r, echo=FALSE}
+holidays
+```
+
+## Australian holidays
+\fontsize{9}{10}\sf
+
+```{r holidays-plot, echo=TRUE, dependson="holidays"}
+holidays %>% autoplot(Trips) +
+  ylab("thousands of trips") +
+  ggtitle("Australian domestic holiday nights")
+```
+
+## Seasonal plots
+\fontsize{9}{10}\sf
+
+```{r graphics1, fig.width=6, fig.height=6, out.width="40%"}
+holidays %>% gg_season(Trips) +
+  ylab("thousands of trips") +
+  ggtitle("Australian domestic holiday nights")
+```
+
+## Seasonal subseries plots
+\fontsize{9}{10}\sf
+
+```{r graphics2, fig.width=9, fig.height=5, out.height="70%"}
+holidays %>% gg_subseries(Trips) +
+  ylab("thousands of trips") +
+  ggtitle("Australian domestic holiday nights")
+```
+
+## Victorian electricity demand
+\fontsize{10}{11}\sf
+
+```{r}
+vic_elec
+```
+
+## Multiple seasonal periods
+\fontsize{12}{13}\sf
+
+```{r, dev = "png", dpi = 180}
+vic_elec %>% gg_season(Demand)
+```
+
+## Multiple seasonal periods
+\fontsize{12}{13}\sf
+
+```{r, dev = "png", dpi = 180}
+vic_elec %>% gg_season(Demand, period = "week")
+```
+
+## Multiple seasonal periods
+\fontsize{12}{13}\sf
+
+```{r, dev = "png", dpi = 180}
+vic_elec %>% gg_season(Demand, period = "day")
+```
+
+## Time plots
+
+ * Plotted against time: `autoplot()` (each series overplotted)
+ * Plotted against season: `gg_season()` (facet by key)
+ * Plotted against time with seasonal facets: `gg_subseries()` (facet by key)
+
+## Autocorrelations
+\fontsize{9}{10}\sf
+
+```{r tourismacf, warning=TRUE}
+holidays %>% ACF(Trips)
+```
+
+## ACF plots
+\fontsize{9}{10}\sf
+
+```{r tourismacf2, fig.height=4, fig.width=4, out.height="70%"}
+holidays %>%
+  ACF(Trips) %>%
+  autoplot()
+```
+
+## Google stock price
+\fontsize{12}{14}\sf
+
+```{r gafa}
+gafa_stock
+```
+
+## Google stock price
+\fontsize{12}{14}\sf
+
+```{r google-2015}
+google_2015 <- gafa_stock %>%
+  filter(Symbol == "GOOG", year(Date) == 2015) %>%
+  select(Date, Close)
+google_2015
+```
+
+## Google stock price
+
+```{r}
+google_2015 %>% autoplot(Close)
+```
+
+## Google stock price
+\fontsize{9}{9}\sf
+
+```{r, message=TRUE, warning=TRUE}
+google_2015 %>%
+  ACF(Close, lag_max = 100)
+```
+
+## Google stock price
+\fontsize{9}{9}\sf
+
+```{r}
+google_2015 %>%
+  ACF(Close, lag_max = 100) %>%
+  autoplot()
+```
+
+# feasts: Time series features
+
+## Strength of seasonality and trend
+
+\begin{alertblock}{STL decomposition}
+\centerline{$y_t = T_t+S_t+R_t$}
+\end{alertblock}
+
+### Seasonal strength
+$$\max\left(0, 1-\frac{\text{Var}(R_t)}{\text{Var}(S_t+R_t)}\right)$$
+
+### Trend strength
+$$\max\left(0, 1-\frac{\text{Var}(R_t)}{\text{Var}(T_t+R_t)}\right)$$
+
+## Feature extraction and statistics
+
+\fontsize{9}{10}\sf
+
+```{r features}
+tourism %>% features(Trips, feat_stl)
+```
+
+## Feature extraction and statistics
+\fontsize{8}{9}\sf
+
+```{r features-plot, fig.height=4, fig.width=6, out.height="65%"}
+tourism %>%
+  features(Trips, feat_stl) %>%
+  ggplot(aes(x = trend_strength, y = seasonal_strength_year, col = Purpose)) +
+  geom_point() +
+  facet_wrap(vars(State))
+```
+
+\only<2->{\begin{textblock}{5.7}(8.8,6.6)
+\begin{alertblock}{}\fontsize{12}{12}\sf
+\begin{itemize}\tightlist
+\item Holidays more seasonal than other travel.
+\item WA has strongest trends.
+\end{itemize}
+\end{alertblock}\end{textblock}}
+
+## Feature extraction and statistics
+\fontsize{9}{9}\sf
+
+Find the most seasonal time series:
+
+```{r extreme}
+most_seasonal <- tourism %>%
+  features(Trips, feat_stl) %>%
+  filter(seasonal_strength_year == max(seasonal_strength_year))
+```
+
+\pause\vspace*{-0.3cm}
+
+```{r extreme2, fig.height=2}
+tourism %>%
+  right_join(most_seasonal, by = c("State", "Region", "Purpose")) %>%
+  ggplot(aes(x = Quarter, y = Trips)) +
+  geom_line() +
+  facet_grid(vars(State, Region, Purpose))
+```
+
+## Feature extraction and statistics
+\fontsize{9}{9}\sf
+
+Find the most trended time series:
+
+```{r extreme3}
+most_trended <- tourism %>%
+  features(Trips, feat_stl) %>%
+  filter(trend_strength == max(trend_strength))
+```
+
+\pause\vspace*{-0.3cm}
+
+```{r extreme4, fig.height=2}
+tourism %>%
+  right_join(most_trended, by = c("State", "Region", "Purpose")) %>%
+  ggplot(aes(x = Quarter, y = Trips)) +
+  geom_line() +
+  facet_grid(vars(State, Region, Purpose))
+```
+
+```{r pca, echo=FALSE}
+# Save pdf figures
+savepdf <- function(file, width = 16, height = 10) {
+  fname <<- paste("figs/", file, ".pdf", sep = "")
+  pdf(fname, width = width / 2.54, height = height / 2.54, pointsize = 10)
+  par(mgp = c(2.2, 0.45, 0), tcl = -0.4, mar = c(3.3, 3.6, 1.1, 1.1))
+}
+endpdf <- function() {
+  crop::dev.off.crop(fname)
+}
+# Compute features
+tourism_features <- tourism %>%
+  features(Trips, feature_set(pkgs = "feasts"))
+# Compute PCs
+pcs <- tourism_features %>%
+  select(-State, -Region, -Purpose) %>%
+  prcomp(scale = TRUE) %>%
+  broom::augment(tourism_features)
+# Save some PC plots
+savepdf("pca1", 18, 10)
+pcs %>% ggplot(aes(x = .fittedPC1, y = .fittedPC2)) +
+  geom_point() +
+  theme(aspect.ratio = 1)
+endpdf()
+savepdf("pca2", 18, 10)
+pcs %>% ggplot(aes(x = .fittedPC1, y = .fittedPC2, col = State)) +
+  geom_point() +
+  theme(aspect.ratio = 1)
+endpdf()
+savepdf("pca3", 18, 10)
+pcs %>% ggplot(aes(x = .fittedPC1, y = .fittedPC2, col = Purpose)) +
+  geom_point() +
+  theme(aspect.ratio = 1)
+endpdf()
+# Find outliers
+outliers <- pcs %>%
+  filter(.fittedPC1 > 12 | (.fittedPC1 > 10 & .fittedPC2 > 0))
+savepdf("pca4", 18, 10)
+pcs %>% ggplot(aes(x = .fittedPC1, y = .fittedPC2, col = Purpose)) +
+  geom_point() +
+  theme(aspect.ratio = 1) +
+  geom_point(data = outliers, aes(x = .fittedPC1, y = .fittedPC2), col = "black", shape = 1, size = 3)
+endpdf()
+```
+
+## Feature extraction and statistics
+\fontsize{9}{9}\sf
+
+```{r tourismfeatures, eval=FALSE}
+tourism_features <- tourism %>%
+  features(Trips, feature_set(pkgs = "feasts"))
+```
+
+```{r echo=FALSE}
+tourism_features
+```
+
+\begin{textblock}{5}(9.6,1.5)
+\begin{alertblock}{}\fontsize{10}{12}\sf
+All features from the feasts package
+\end{alertblock}
+\end{textblock}
+
+## Feature extraction and statistics
+\fontsize{8}{8}\sf
+
+```{r pcatable}
+pcs <- tourism_features %>%
+  select(-State, -Region, -Purpose) %>%
+  prcomp(scale = TRUE) %>%
+  broom::augment(tourism_features)
+```
+
+```{r echo=FALSE}
+pcs
+```
+
+\begin{textblock}{5}(9.6,1.5)
+\begin{alertblock}{}\fontsize{10}{12}\sf
+Principal components based on all features from the feasts package
+\end{alertblock}
+\end{textblock}
+
+## Feature extraction and statistics
+\fontsize{9}{9}\sf
+
+\begin{textblock}{3.3}(.4,3)
+\begin{alertblock}{}\fontsize{10}{12}\sf
+Principal components based on all features from the feasts package
+\end{alertblock}
+\end{textblock}
+
+```r
+pcs %>% ggplot(aes(x=.fittedPC1, y=.fittedPC2)) +
+  geom_point() + theme(aspect.ratio=1)
+```
+
+\placefig{4}{2.6}{height=6.4cm, width=12cm}{pca1}
+\vspace*{10cm}
+
+## Feature extraction and statistics
+\fontsize{9}{9}\sf
+
+\begin{textblock}{3.3}(.4,3)
+\begin{alertblock}{}\fontsize{10}{12}\sf
+Principal components based on all features from the feasts package
+\end{alertblock}
+\end{textblock}
+
+```r
+pcs %>% ggplot(aes(x=.fittedPC1, y=.fittedPC2, col=State)) +
+  geom_point() + theme(aspect.ratio=1)
+```
+
+\placefig{4}{2.6}{height=6.4cm, width=12cm}{pca2}
+\vspace*{10cm}
+
+## Feature extraction and statistics
+\fontsize{9}{9}\sf
+
+\begin{textblock}{3.3}(.4,3)
+\begin{alertblock}{}\fontsize{10}{12}\sf
+Principal components based on all features from the feasts package
+\end{alertblock}
+\end{textblock}
+
+```r
+pcs %>% ggplot(aes(x=.fittedPC1, y=.fittedPC2, col=Purpose)) +
+  geom_point() + theme(aspect.ratio=1)
+```
+
+\only<1>{\placefig{4}{2.6}{height=6.4cm, width=12cm}{pca3}}
+\only<2>{\placefig{4}{2.6}{height=6.4cm, width=12cm}{pca4}}
+\vspace*{10cm}
+
+## Feature extraction and statistics
+\fontsize{8}{8}\sf
+
+```{r outliers2, fig.height=4.7, fig.width=12, out.width="90%"}
+outliers %>%
+  left_join(tourism, by = c("State", "Region", "Purpose")) %>%
+  mutate(Series = glue("{State}", "{Region}", "{Purpose}", .sep = "\n\n")) %>%
+  ggplot(aes(x = Quarter, y = Trips)) + geom_line() +
+  facet_grid(Series ~ ., scales = "free_y") +
+  ggtitle("Outlying time series in PC space")
+```
+
+
+# fable: Forecasting
+
+```{r austa, include=FALSE}
+# Grab ABS data
+austa <- readxl::read_excel("data/340101.xls", sheet = "Data1", skip = 9) %>%
+  rename(date = `Series ID`, value = A85375847A) %>%
+  select(date, value) %>%
+  transmute(
+    Month = yearmonth(date),
+    Visitors = value / 1e3
+  ) %>%
+  bind_rows(tibble(
+    Month = yearmonth(seq(as.Date("2021-06-01"), by = "1 month", length = 7)),
+    Visitors = NA_real_
+  )) %>%
+  as_tsibble(index = Month) %>%
+  filter(Month >= yearmonth("2000 Jan"))
+# Fit ETS model
+fit <- austa %>%
+  filter(Month < yearmonth("2018 Jan")) %>%
+  model(ETS(Visitors))
+# Product forecasts
+fc <- forecast(fit, h = 48) %>%
+  mutate(Month = as.Date(Month))
+# Simulate 100 future sample paths
+set.seed(1967)
+sim <- fit %>%
+  generate(h = 48, times = 100) %>%
+  mutate(
+    replicate = factor(.rep, levels = 1:100, labels = paste("Future", 1:100)),
+    .rep = as.numeric(.rep)
+  ) %>%
+  as_tibble() %>%
+  mutate(Month = as.Date(Month))
+# Nice colors
+cols <- scale_colour_manual(
+  values = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442", sample(rainbow(93))),
+  breaks = paste("Future", 1:100),
+  name = " "
+)
+# Now build up some plots with alignment
+p1 <- austa %>%
+  mutate(Visitors = if_else(Month >= yearmonth("2018 Jan"), NA_real_, Visitors)) %>%
+  as_tibble() %>%
+  mutate(Month = as.Date(Month)) %>%
+  ggplot(aes(x = Month, y = Visitors)) +
+  geom_line() +
+  labs(
+    x = "Month",
+    y = "Thousands of visitors",
+    title = "Total short-term visitors to Australia"
+  ) +
+  scale_x_date(
+    breaks = seq(as.Date("2000-01-01"), by = "5 years", l = 5),
+    labels = paste("Jan", seq(2000, 2020, by = 5)),
+    minor_breaks = seq(as.Date("2001-01-01"), by = "1 year", l = 25)
+  ) +
+  ylim(min(austa$Visitors, sim$.sim, na.rm = TRUE), max(austa$Visitors, sim$.sim, na.rm = TRUE))
+p2 <- p1 + cols +
+  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+    data = sim %>% filter(.rep <= 1)
+  )
+p3 <- p1 + cols +
+  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+    data = sim %>% filter(.rep <= 2)
+  )
+p4 <- p1 + cols +
+  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+    data = sim %>% filter(.rep <= 3)
+  )
+p5 <- p1 + cols +
+  geom_line(aes(y = .sim, group = replicate, colour = replicate),
+    data = sim %>% filter(.rep <= 10)
+  )
+p6 <- p1 + cols +
+  geom_line(aes(y = .sim, group = replicate, colour = replicate), alpha = 0.5, data = sim) +
+  guides(colour = "none")
+p7 <- p1 +
+  geom_line(aes(y = .sim, group = replicate, colour = replicate), alpha = 0.5, col = "gray", data = sim) +
+  guides(colour = "none")
+p8 <- p7 + autolayer(fc, level = c(50, 90))
+p9 <- p8 + coord_cartesian(xlim = as.Date(c("2013-01-01", "2021-08-01"))) +
+  scale_x_date(
+    breaks = seq(as.Date("2000-01-01"), by = "2 years", l = 11),
+    labels = paste("Jan", seq(2000, 2020, by = 2)),
+    minor_breaks = seq(as.Date("2001-01-01"), by = "1 year", l = 25)
+  )
+p10 <- p9 +
+  geom_line(
+    colour = "black",
+    data = austa %>% filter(Month >= yearmonth("2018 Jan")) %>% mutate(Month = as.Date(Month))
+  )
+aligned_plots <- align_patches(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+
+for (i in seq(10)) {
+  pdf(paste0("figs/austa", i, ".pdf"), height = 3.3, width = 8)
+  print(aligned_plots[[i]])
+  dev.off()
+}
+```
+
+## Random futures
+
+\forecast\pause
+\includegraphics[height=8cm]{austa1}
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa2}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa3}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa4}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa5}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa6}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa7}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa8}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa9}
+\simfutures
+
+## Random futures
+
+\forecast
+\includegraphics[height=8cm]{austa10}
+\simfutures
+
+## Model fitting
+\fontsize{10}{11}\sf
+
+```{r holiday-model}
+holiday_fit <- holidays %>%
+  model(
+    snaive = SNAIVE(Trips),
+    naive = NAIVE(Trips),
+    ets = ETS(Trips),
+    arima = ARIMA(Trips)
+  )
+```
+
+
+```{r holiday-model2, echo=FALSE, dependson='holiday-model'}
+holiday_fit
+```
+
+## Model fitting
+\fontsize{10}{11}\sf
+
+```{r holiday-model3, dependson='holiday-model'}
+holiday_fit %>%
+  filter(State == "VIC") %>%
+  select(arima) %>%
+  report()
+```
+
+## Model fitting
+\fontsize{10}{11}\sf
+
+```{r holiday-model4, dependson='holiday-model'}
+glance(holiday_fit)
+```
+
+## Model fitting
+\fontsize{10}{11}\sf
+
+```{r holiday-model5, dependson='holiday-model'}
+tidy(holiday_fit)
+```
+
+## Model fitting
+\fontsize{10}{11}\sf
+
+```{r holiday-model6, dependson='holiday-model'}
+augment(holiday_fit)
+```
+
+## Ljung-Box test
+
+```{r lbtest, echo=TRUE, fig.height=4, warning = FALSE}
+augment(holiday_fit) %>%
+  filter(State == "VIC", .model == "arima") %>%
+  features(.resid, ljung_box, dof = 2, lag = 8)
+```
+
+## `gg_tsresiduals()` function
+\fontsize{9}{10}\sf
+
+```{r ggtsresiduals, echo=TRUE, warning = FALSE, fig.height=3}
+holiday_fit %>%
+  filter(State == "VIC") %>%
+  select(arima) %>%
+  gg_tsresiduals()
+```
+
+## Producing forecasts
+
+\fontsize{9}{9}\sf
+
+```{r holiday-fc, echo = TRUE, dependson='holiday-model'}
+holiday_fc <- holiday_fit %>%
+  forecast(h = "2 years")
+```
+
+```{r holiday-fbl, echo = FALSE, dependson='holiday-fc'}
+print(holiday_fc, n = 10)
+```
+
+## Visualising forecasts
+\fontsize{9}{9}\sf
+
+```{r holiday-fc-plot, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
+holiday_fc %>%
+  filter(State == "VIC") %>%
+  autoplot(holidays, level = NULL) +
+  labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+
+
+## Visualising forecasts
+\fontsize{9}{9}\sf
+
+```{r holiday-fc-plot2, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
+holiday_fc %>%
+  filter(State == "VIC", .model == "arima") %>%
+  autoplot(holidays) +
+  labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+
+## Prediction intervals
+\fontsize{10}{12}\sf
+
+```{r holiday-fc-interval, dependson='holiday-fc'}
+holiday_fc %>% hilo(level = 95)
+```
+
+## Prediction intervals
+
+ * Point forecasts often useless without a measure of uncertainty (such as prediction intervals).
+ * Prediction intervals require a stochastic model (with random errors, etc).
+ * For most models, prediction intervals get wider as the forecast horizon increases.
+ * Use `level` argument to control coverage.
+ * Check residual assumptions before believing them.
+ * Usually too narrow due to unaccounted uncertainty.
+
+# fable: Evaluating forecast accuracy
+
+## Training and test sets
+
+```{r traintest, fig.height=1, echo=FALSE, cache=TRUE}
+train <- 1:18
+test <- 19:24
+par(mar = c(0, 0, 0, 0))
+plot(0, 0, xlim = c(0, 26), ylim = c(0, 2), xaxt = "n", yaxt = "n", bty = "n", xlab = "", ylab = "", type = "n")
+arrows(0, 0.5, 25, 0.5, 0.05)
+points(train, train * 0 + 0.5, pch = 19, col = "#0072B2")
+points(test, test * 0 + 0.5, pch = 19, col = "#D55E00")
+text(26, 0.5, "time")
+text(10, 1, "Training data", col = "#0072B2")
+text(21, 1, "Test data", col = "#D55E00")
+```
+
+-   A model which fits the training data well will not necessarily forecast well.
+-   A perfect fit can always be obtained by using a model with enough parameters.
+-   Over-fitting a model to data is just as bad as failing to identify a systematic pattern in the data.
+  * The test set must not be used for *any* aspect of model development or calculation of forecasts.
+  * Forecast accuracy is based only on the test set.
+
+## Measures of forecast accuracy
+
+```{r holidays-fc-1, echo=FALSE, fig.height=4}
+vic_holidays <- holidays %>% filter(State == "VIC")
+train <- vic_holidays %>% filter(year(Quarter) <= 2015)
+vic_fit <- train %>%
+  model(
+    snaive = SNAIVE(Trips),
+    naive = NAIVE(Trips),
+    ets = ETS(Trips),
+    arima = ARIMA(Trips)
+  )
+vic_fc <- vic_fit %>%
+  forecast(h = 8)
+vic_fc %>%
+  autoplot(vic_holidays, level = NULL) +
+  labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+
+## Measures of forecast accuracy
+\fontsize{10}{10}\sf
+
+```{r holidays-train-accuracy}
+accuracy(vic_fc, holidays)
+```
+
+```{r tscvplots, echo=FALSE}
+tscv_plot <- function(.init, .step, h = 1) {
+  expand.grid(
+    time = seq(26),
+    .id = seq(trunc(20 / .step))
+  ) %>%
+    group_by(.id) %>%
+    mutate(
+      observation = case_when(
+        time <= ((.id - 1) * .step + .init) ~ "train",
+        time %in% c((.id - 1) * .step + .init + h) ~ "test",
+        TRUE ~ "unused"
+      )
+    ) %>%
+    ungroup() %>%
+    filter(.id <= 26 - .init) %>%
+    ggplot(aes(x = time, y = .id)) +
+    geom_segment(
+      aes(x = 0, xend = 27, y = .id, yend = .id),
+      arrow = arrow(length = unit(0.015, "npc")),
+      col = "black", size = .25
+    ) +
+    geom_point(aes(col = observation), size = 2) +
+    scale_y_reverse() +
+    scale_color_manual(values = c(train = "#0072B2", test = "#D55E00", unused = "gray")) +
+    # theme_void() +
+    # geom_label(aes(x = 28.5, y = 1, label = "time")) +
+    guides(col = FALSE) +
+    labs(x = "time", y = "") +
+    theme_void() +
+    theme(axis.title = element_text())
+}
+```
+
+## Time series cross-validation {-}
+
+**Traditional evaluation**
+
+```{r traintest1, fig.height=1, echo=FALSE, dependson="tscvplots", message=FALSE}
+tscv_plot(.init = 18, .step = 20, h = 1:8) +
+  geom_text(aes(x = 10, y = 0.8, label = "Training data"), color = "#0072B2") +
+  geom_text(aes(x = 21, y = 0.8, label = "Test data"), color = "#D55E00") +
+  ylim(1, 0)
+```
+
+\pause
+
+**Time series cross-validation**
+
+```{r tscvggplot1, echo=FALSE, message=FALSE}
+tscv_plot(.init = 3, .step = 1, h = 1) +
+  geom_text(aes(x = 21, y = 0, label = "h = 1"), color = "#D55E00")
+```
+
+
+## Time series cross-validation {-}
+
+**Traditional evaluation**
+
+```{r traintest2, ref.label="traintest1", fig.height=1, echo=FALSE, message=FALSE}
+```
+
+**Time series cross-validation**
+
+```{r tscvggplot2, echo=FALSE,  dependson="tscvplots", message=FALSE}
+tscv_plot(.init = 3, .step = 1, h = 2) +
+  geom_text(aes(x = 21, y = 0, label = "h = 2"), color = "#D55E00")
+```
+
+## Time series cross-validation {-}
+
+**Traditional evaluation**
+
+```{r traintest3, ref.label="traintest1", fig.height=1, echo=FALSE, message=FALSE}
+```
+
+**Time series cross-validation**
+
+```{r tscvggplot3, echo=FALSE,  dependson="tscvplots", message=FALSE}
+tscv_plot(.init = 3, .step = 1, h = 3) +
+  geom_text(aes(x = 21, y = 0, label = "h = 3"), color = "#D55E00")
+```
+
+
+## Time series cross-validation {-}
+
+**Traditional evaluation**
+
+```{r traintest4, ref.label="traintest1", fig.height=1, echo=FALSE, message=FALSE}
+```
+
+**Time series cross-validation**
+
+```{r tscvggplot4, echo=FALSE,  dependson="tscvplots", message=FALSE}
+tscv_plot(.init = 3, .step = 1, h = 4) +
+  geom_text(aes(x = 21, y = 0, label = "h = 4"), color = "#D55E00")
+```
+
+\only<2>{\begin{textblock}{6.7}(.3,6.3)\begin{block}{}\fontsize{12}{13}\sf
+\begin{itemize}\tightlist
+\item Forecast accuracy averaged over test sets.
+\item Also known as "evaluation on a rolling forecasting origin"
+\end{itemize}\end{block}\end{textblock}}
+
+\vspace*{10cm}
+
+## Time series cross-validation {-}
+
+\fontsize{12}{13}\sf
+
+Stretch with a minimum length of 4 years, growing by 1 quarter each step.
+
+```{r vichol-stretch}
+vic_holiday_stretch <- holidays %>%
+  filter(State == "VIC") %>%
+  stretch_tsibble(.init = 16, .step = 1)
+```
+\fontsize{10}{11}\sf
+```{r vichol-stretch-print, echo = FALSE, dependson="vichol-stretch"}
+vic_holiday_stretch
+```
+
+## Time series cross-validation {-}
+
+\fontsize{10}{11}\sf
+
+```{r vichol-fit, dependson="vichol-stretch"}
+fit_cv <- vic_holiday_stretch %>%
+  model(
+    ets = ETS(Trips),
+    arima = ARIMA(Trips),
+    snaive = SNAIVE(Trips)
+  )
+```
+
+\fontsize{10}{11}\sf
+```{r vichol-fit-print, echo = FALSE, dependson="vichol-fit"}
+print(fit_cv, n = 6)
+```
+
+## Time series cross-validation {-}
+
+\fontsize{10}{11}\sf
+
+Produce one step ahead forecasts from all models.
+
+```{r vichol-fc, dependson="vichol-fit"}
+fc_cv <- fit_cv %>%
+  forecast(h = 1)
+```
+
+```{r vichol-fc-print, echo = FALSE, dependson="vichol-fc"}
+fc_cv %>%
+  select(-.model) %>%
+  print(n = 6)
+```
+
+## Time series cross-validation {-}
+
+\fontsize{10}{11}\sf
+
+```{r vichol-accuracy, dependson="vichol-fc"}
+# Cross-validated
+fc_cv %>% accuracy(holidays)
+```
+
+\fontsize{11}{11}\sf
+
+```{r, echo = FALSE, warning = FALSE, eval=FALSE, dependson="vichol-fc"}
+fc_cv %>%
+  accuracy(holidays) %>%
+  mutate(.type = "Cross-validation") %>%
+  bind_rows(
+    fb_stock %>%
+      model(RW(Close ~ drift())) %>%
+      accuracy()
+  ) %>%
+  transmute(Type = .type, RMSE, MAE, MAPE) %>%
+  gt::gt("Type") %>%
+  gt::fmt_number(columns = 2:4, decimals = 3) %>%
+  gt::as_latex()
+```
+
+A good way to choose the best forecasting model is to find the model with the smallest RMSE computed using time series cross-validation.
+
+# fable: Forecast reconciliation
+
+## Hierarchical time series
+\fontsize{13}{14}\sf
+
+A \alert{\textbf{hierarchical time series}} is a collection of several time series that are linked together in a hierarchical structure.
+
+\begin{minipage}{9.6cm}
+\begin{block}{}
+\begin{tikzpicture}
+\tikzstyle{every node}=[ellipse,draw,inner sep=0.2pt,fill=red!15]
+\tikzstyle[level distance=.1cm]
+\tikzstyle[sibling distance=7cm]
+\tikzstyle{level 1}=[sibling distance=33mm,set style={{every node}+=[fill=blue!15]}]
+\tikzstyle{level 2}=[sibling distance=10mm,font=\small,set style={{every node}+=[fill=yellow]}]
+\node{Total}[edge from parent fork down]
+ child {node {A}
+   child {node {AA}}
+   child {node {AB}}
+   child {node {AC}}
+ }
+ child {node {B}
+   child {node {BA}}
+   child {node {BB}}
+   child {node {BC}}
+ }
+ child {node {C}
+   child {node {CA}}
+   child {node {CB}}
+   child {node {CC}}
+ };
+\end{tikzpicture}
+\end{block}
+\end{minipage}
+
+\pause\alert{Examples}\vspace*{-0.2cm}
+
+ * Tourism demand by states, zones, regions
+
+## Grouped time series
+\fontsize{13}{14}\sf
+
+A \alert{\textbf{grouped time series}} is a collection of time series that can be grouped together in a number of non-hierarchical ways.
+
+\begin{minipage}{9.2cm}
+\begin{block}{}
+\begin{tikzpicture}[level distance=1.5cm]
+\tikzstyle{every node}=[ellipse,draw,inner sep=0.2pt,outer sep=0pt, fill=red!15]
+\tikzstyle{level 1}=[sibling distance=23mm,set style={{every node}+=[fill=blue!15]},level distance=1cm]
+\tikzstyle{level 2}=[sibling distance=10mm,font=\small,set style={{every node}+=[fill=yellow]}, level distance=0.9cm]
+\node{Total}[edge from parent fork down]
+ child {node {A}
+   child {node {AX}}
+   child {node {AY}}
+ }
+ child {node {B}
+   child {node {BX}}
+   child {node {BY}}
+ };
+\end{tikzpicture}\hspace*{1cm}
+\begin{tikzpicture}[level distance=1.5cm]
+\tikzstyle{every node}=[ellipse,draw,inner sep=0.2pt,outer sep=0pt, fill=red!15]
+\tikzstyle{level 1}=[sibling distance=23mm,set style={{every node}+=[fill=blue!15]},level distance=1cm]
+\tikzstyle{level 2}=[sibling distance=10mm,font=\small,set style={{every node}+=[fill=yellow]}, level distance=0.9cm]
+\node{Total}[edge from parent fork down]
+ child {node {X}
+   child {node {AX}}
+   child {node {BX}}
+ }
+ child {node {Y}
+   child {node {AY}}
+   child {node {BY}}
+ };
+\end{tikzpicture}
+\end{block}
+\end{minipage}
+
+\pause\alert{Examples}
+
+ * Tourism by state and purpose of travel
+ * Retail sales by product groups/sub groups, and by countries/regions
+
+## Creating aggregates
+\fontsize{8}{8}\sf
+
+```{r tourism_aggregate}
+tourism %>%
+  aggregate_key(Purpose * (State / Region), Trips = sum(Trips)) %>%
+  filter(Quarter == yearquarter("1998 Q1")) %>%
+  print(n = 15)
+```
+
+## Creating aggregates
+\fontsize{13}{15}\sf
+
+ * Similar to `summarise()` but using the key structure
+ * A grouped structure is specified using `grp1 * grp2`
+ * A nested structure is specified via `parent / child`.
+ * Groups and nesting can be mixed:
+
+    ```r
+    (country/region/city) * (brand/product)
+    ```
+
+ * All possible aggregates are produced.
+ * These are useful when forecasting at different levels of aggregation.
+
+
+## The problem
+\fontsize{13}{14}\sf
+
+\begin{alertblock}{}
+\begin{enumerate}\tightlist
+ \item How to forecast time series at all nodes such that the forecasts add up in the same way as the original data?
+ \item Can we exploit relationships between the series to improve the forecasts?
+\end{enumerate}
+\end{alertblock}\pause
+
+### The solution
+
+1. Forecast all series at all levels of aggregation using an automatic forecasting algorithm.\newline (e.g., `ETS`, `ARIMA`, ...)
+2. Reconcile the resulting forecasts so they add up correctly using least squares optimization (i.e., find closest reconciled forecasts to the original forecasts).
+3. This is available using `reconcile()`.
+
+## Forecast reconciliation
+\fontsize{9}{10}\sf
+
+```{r tourismets_reconciled, message=FALSE}
+tourism %>%
+  aggregate_key(Purpose * (State / Region), Trips = sum(Trips)) %>%
+  model(ets = ETS(Trips)) %>%
+  reconcile(ets_adjusted = min_trace(ets)) %>%
+  forecast(h = 2)
+```
+
+## Hierarchical and grouped time series
+
+Every collection of time series with aggregation constraints can be written as
+\begin{block}{}
+\centerline{$\by_{t}=\bS\bm{b}_{t}$}
+\end{block}
+where
+
+ * $\by_t$ is a vector of all series at time $t$
+ * $\bm{b}_t$ is a vector of the most disaggregated series at time $t$
+ * $\bS$ is a ``summing matrix'' containing the aggregation constraints.
+
+## Hierarchical time series
+
+\begin{minipage}{4cm}\vspace*{0.2cm}
+\begin{block}{}\centering
+\begin{tikzpicture}
+\tikzstyle{every node}=[ellipse,draw,fill=red!15,inner sep=2pt]
+\tikzstyle[level distance=.3cm]
+\tikzstyle[sibling distance=12cm]
+\tikzstyle{level 1}=[sibling distance=10mm,font=\small,set style={{every node}+=[fill=blue!15]}]
+\node{Total}[edge from parent fork down]
+ child {node {A}
+ }
+ child {node {B}
+ }
+ child {node {C}
+ };
+\end{tikzpicture}
+\end{block}
+\end{minipage}
+
+\only<2->{\begin{textblock}{6.3}(6,1)\small
+\begin{itemize}\itemsep=0cm\parskip=0cm
+\item[$ y_{t}: $] observed aggregate of all series at time
+$t$.
+\item[$ y_{X,t}: $] observation on series $X$ at time $t$.
+\item[$ \bm{b}_{t}: $] vector of all series at bottom level
+in time $t$.
+\end{itemize}
+\end{textblock}}\vspace*{0.6cm}
+\only<3->{
+$\bY_{t}= \begin{pmatrix}
+  y_{t}\\
+  y_{A,t}\\
+  y_{B,t}\\
+  y_{C,t}
+  \end{pmatrix} = \only<3>{\hspace*{0.01cm}\begin{pmatrix}
+                1 & 1 & 1 \\
+                1 & 0 & 0 \\
+                0 & 1 & 0\\
+                0 & 0 & 1
+                \end{pmatrix}}\only<4->{{\color{blue}\underbrace{\begin{pmatrix}
+                1 & 1 & 1 \\
+                1 & 0 & 0 \\
+                0 & 1 & 0\\
+                0 & 0 & 1
+                \end{pmatrix}}_{\bS}}}\only<3>{\hspace*{0.08cm}}\only<3>{\hspace*{-0.1cm}\begin{pmatrix}y_{A,t}\\y_{B,t}\\y_{C,t}\end{pmatrix}}\rule{0cm}{1.6cm}
+                \only<4->{\hspace*{0.08cm}{\color{red}\underbrace{\begin{pmatrix}y_{A,t}\\y_{B,t}\\y_{C,t}\end{pmatrix}}_{\bm{b}_{t}}}}$}
+
+\vspace*{-0.6cm}
+
+\only<4>{\hspace*{8cm}\colorbox[RGB]{210,210,210}{$\bY_{t}=\color{blue}\bS\color{red}\bm{b}_{t}$}}
+
+\vspace*{10cm}
+
+## Forecasting notation
+
+Let $\hat{\by}_n(h)$ be vector of initial $h$-step forecasts, made at time $n$, stacked in same order as $\by_t$. \pause\newline  (In general, they will not ``add up''.)\pause
+
+\begin{block}{}
+Reconciled forecasts must be of the form:
+$$\tilde{\by}_{n}(h)=\bS\bm{G}\hat{\by}_{n}(h)$$
+for some matrix $\bm{G}$.
+\end{block}\pause
+
+ * $\bm{G}$ extracts and combines base forecasts $\hat{\by}_{n}(h)$ to get bottom-level forecasts.
+ * $\bS$ adds them up
+
+## Optimal combination forecasts
+\fontsize{13}{14}\sf
+
+\begin{alertblock}{Main result}
+The best (minimum sum of variances) unbiased forecasts are obtained when
+$\bm{G} = (\bS'\bW^{-1}_{h}\bS)^{-1}\bS'\bW^{-1}_{h}$,
+where $\bW_h$ is the $h$-step base forecast error covariance matrix.
+\end{alertblock}
+
+\pause
+
+\begin{block}{}
+\centerline{$\displaystyle\textcolor{red}{\tilde{\by}_{n}(h)}
+=\bS(\bS'\bW^{-1}_{h}\bS)^{-1}\bS'\bW^{-1}_{h}\textcolor{blue}{\hat{\by}_{n}(h)}$}
+\end{block}\fontsize{14}{15}\sf
+
+\alert{\textbf{Problem:}} $\bW_h$ hard to estimate, especially for $h>1$.
+
+\alert{Solutions:}\vspace*{-0.4cm}
+
+ * Ignore $\bW_h$ (OLS) [`min_trace(method='ols')`]
+ * Assume $\bW_h = k_h\bW_1$ is diagonal (WLS) [`min_trace(method='wls')`]
+ * Assume $\bW_h = k_h\bW_1$ and estimate it (GLS) [`min_trace(method='shrink')` (the default)]
+
+## Features
+\fontsize{15}{17}\sf
+
+ * Covariates can be included in initial forecasts.
+ * Adjustments can be made to initial forecasts at any level.
+ * Very simple and flexible method. Can work with *any* hierarchical or grouped time series.
+ * Conceptually easy to implement: regression of base forecasts on structure matrix.
+
+## Example: Australian tourism
+\fontsize{12}{13}\sf
+
+```{r fctourism}
+tourism_agg <- tourism %>%
+  aggregate_key(Purpose * (State / Region),
+    Trips = sum(Trips)
+  )
+fc <- tourism_agg %>%
+  filter_index(. ~ "2015 Q4") %>%
+  model(ets = ETS(Trips)) %>%
+  reconcile(ets_adjusted = min_trace(ets)) %>%
+  forecast(h = "2 years")
+```
+
+## Example: Australian tourism
+\fontsize{10}{11}\sf
+
+```{r fctourism2, dependson='fctourism'}
+fc %>%
+  filter(is_aggregated(Purpose) & is_aggregated(State)) %>%
+  autoplot(tourism_agg, level = 95)
+```
+
+## Example: Australian tourism
+\fontsize{10}{11}\sf
+
+```{r fctourism3, dependson='fctourism'}
+fc %>%
+  filter(is_aggregated(Purpose) & State == "VIC" &
+    is_aggregated(Region)) %>%
+  autoplot(tourism_agg, level = 95)
+```
+
+## Example: Australian tourism
+\fontsize{10}{11}\sf
+
+```{r fctourism4, dependson='fctourism'}
+fc %>%
+  filter(is_aggregated(Purpose) & Region == "Melbourne") %>%
+  autoplot(tourism_agg, level = 95)
+```
+
+## Example: Australian tourism
+\fontsize{10}{11}\sf
+
+```{r fctourism5, dependson='fctourism'}
+fc %>%
+  filter(is_aggregated(Purpose) & Region == "Snowy Mountains") %>%
+  autoplot(tourism_agg, level = 95)
+```
+
+## Example: Australian tourism
+\fontsize{10}{11}\sf
+
+```{r fctourism6, dependson='fctourism'}
+fc %>%
+  filter(Purpose == "Holiday" & Region == "Barossa") %>%
+  autoplot(tourism_agg, level = 95)
+```
+
+## Example: Australian tourism
+\fontsize{10}{11}\sf
+
+```{r fctourism7, dependson='fctourism'}
+fc %>%
+  filter(is_aggregated(Purpose) & Region == "MacDonnell") %>%
+  autoplot(tourism_agg, level = 95)
+```
+
+## Example: Australian tourism
+\fontsize{10}{10}\sf
+
+```{r fctourismcomb}
+fc <- tourism_agg %>%
+  filter_index(. ~ "2015 Q4") %>%
+  model(
+    ets = ETS(Trips),
+    arima = ARIMA(Trips)
+  ) %>%
+  mutate(
+    comb = (ets + arima) / 2
+  ) %>%
+  reconcile(
+    ets_adj = min_trace(ets),
+    arima_adj = min_trace(arima),
+    comb_adj = min_trace(comb)
+  ) %>%
+  forecast(h = "2 years")
+```
+
+## Forecast evaluation
+\fontsize{10}{11}\sf
+
+```{r fcaccuracy, dependson='fctourismcomb'}
+fc %>% accuracy(tourism_agg)
+```
+
+## Forecast evaluation
+\fontsize{11}{11}\sf
+
+```{r fcaccuracy2, dependson='fctourismcomb'}
+fc %>%
+  accuracy(tourism_agg) %>%
+  group_by(.model) %>%
+  summarise(MASE = mean(MASE)) %>%
+  arrange(MASE)
+```
+
+## Tidyverts developers
+
+\begin{textblock}{5.7}(0.4,1.4)
+\begin{block}{Earo Wang}
+\includegraphics[height=5.8cm]{earowang}
+\end{block}
+\end{textblock}
+
+\begin{textblock}{5.7}(6.75,1.4)
+\begin{block}{Mitchell O'Hara-Wild}
+\includegraphics[height=5.8cm]{mitch2}
+\end{block}
+\end{textblock}
+
+## More information
+\fontsize{18}{20}\sf
+
+ * Slides and papers: **robjhyndman.com**
+ * Packages: **tidyverts.org**
+ * Forecasting textbook using fable package: **OTexts.com/fpp3**
+
+\begin{textblock}{8}(7.6,4.8)
+\begin{alertblock}{Find me at ...}
+\href{https://twitter.com/robjhyndman}{\faicon{twitter} @robjhyndman}
+
+\href{https://github.com/robjhyndman}{\faicon{github}  @robjhyndman}
+
+\href{https://robjhyndman.com}{\faicon{home} robjhyndman.com}
+
+\href{mailto:rob.hyndman@monash.edu}{\faicon{envelope}  rob.hyndman@monash.edu}
+\end{alertblock}
+\end{textblock}
+\vspace*{10cm}
