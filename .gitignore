@@ -1,6 +1,10 @@
 .Rproj.user
 *_cache/
 *_files/
+figs/austa*
+figs/pdfqs*
+figs/qs*
+figs/pca*
 startup.txt
 titlepage.png
 *.log

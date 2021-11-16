@@ -27,11 +27,12 @@ library(fpp3)
 library(patchwork)
 library(glue)
 library(stringr)
+library(broom)
 
 # Colors to be viridis for continuous scales and Okabe for discrete scales
 options(
   digits = 3,
-  width = 85,
+  width = 90,
   ggplot2.continuous.color = "viridis",
   ggplot2.continuous.fill = "viridis",
   ggplot2.discrete.color = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
@@ -57,6 +58,29 @@ tourism <- tsibble::tourism %>%
   )
 ```
 
+## E A Cornish (1909--1973)
+
+\placefig{0}{1.37}{width=6.5cm, height=20cm}{cornish}
+\begin{textblock}{8}(7,2)
+\begin{itemize}
+\item Foundation Fellow of the Australian Academy of Science (1954)
+\item Chief of the CSIRO Mathematical Statistics Division (1954--1973)
+\item Helped establish CSIRO Division of Computing Research (1963)
+\end{itemize}
+\end{textblock}
+
+## E A Cornish (1909--1973)
+
+\begin{block}{Rainfall papers}\fontsize{12}{13}\sf
+\begin{enumerate}\tightlist
+\item Cornish, EA \& Coote, GG (1958) \emph{The correlation of monthly rainfall with position and altitude of observing stations in South Australia.} CSIRO Div Math Stats Tech Paper 4.
+\item Cornish, EA and Stenhouse, NS (1958) \emph{Inter-station correlations of monthly rainfall in South Australia.} CSIRO Div Math Stats Tech Paper 5.
+\item Cornish, EA, Hill, GW, \& Evans, MJ (1961) \emph{Inter-station correlations of rainfall in southern Australia.} CSIRO Div Math Stats Tech Paper 10.
+\end{enumerate}
+\end{block}\fontsize{14}{15}\sf
+
+  * Modelled monthly rainfall at 97 South Australian weather stations based on altitude, longitude and latitude.
+  * Pairwise correlations of 6-day rainfall totals between weather stations: 90,585 correlation coefficients.
 
 ## Tidyverts packages
 
@@ -131,7 +155,6 @@ read_sf("tourism/Tourism_Regions_2020.shp") %>%
 \end{block}
 \end{textblock}}
 
-
 ## Quarterly tourism data
 
 \fontsize{10}{11.3}\sf
@@ -184,7 +207,6 @@ bind_rows(
 \begin{alertblock}{}\fontsize{10}{10}\sf Measures\phantom{dg}\end{alertblock}
 \end{textblock}}
 
-
 ## Characteristics of modern time series
 
   * Often observed at sub-daily frequency over a long time.
@@ -231,14 +253,15 @@ $$\max\left(0, 1-\frac{\text{Var}(R_t)}{\text{Var}(S_t+R_t)}\right)$$
 $$\max\left(0, 1-\frac{\text{Var}(R_t)}{\text{Var}(T_t+R_t)}\right)$$
 
 ## STL-based features
-\fontsize{9}{10}\sf
+\fontsize{9}{9}\sf
 
 ```{r features}
-tourism %>% features(Trips, feat_stl)
+tourism %>%
+  features(Trips, feat_stl)
 ```
 
 ## STL-based features
-\fontsize{8}{9}\sf
+\fontsize{9}{9}\sf
 
 ```{r features-plot, fig.height=4, fig.width=6, out.height="67%"}
 tourism %>%
@@ -247,7 +270,7 @@ tourism %>%
   geom_point() + facet_wrap(vars(State))
 ```
 
-\only<2->{\begin{textblock}{5.7}(8.8,6.6)
+\only<2->{\begin{textblock}{5.3}(9.8,6.6)
 \begin{alertblock}{}\fontsize{12}{12}\sf
 \begin{itemize}\tightlist
 \item Holidays more seasonal than other travel.
@@ -256,42 +279,32 @@ tourism %>%
 \end{alertblock}\end{textblock}}
 
 ## STL-based features
-\fontsize{9}{9}\sf
 
 Find the most seasonal time series:
 
-```{r extreme}
-most_seasonal <- tourism %>%
-  features(Trips, feat_stl) %>%
-  filter(seasonal_strength_year == max(seasonal_strength_year))
-```
+\fontsize{9}{9}\sf
 
-\pause\vspace*{-0.3cm}
-
-```{r extreme2, fig.height=2}
+```{r extreme, fig.height=2}
 tourism %>%
-  right_join(most_seasonal, by = c("State", "Region", "Purpose")) %>%
+  features(Trips, feat_stl) %>%
+  filter(seasonal_strength_year == max(seasonal_strength_year)) %>%
+  left_join(tourism, by = c("State", "Region", "Purpose")) %>%
   ggplot(aes(x = Quarter, y = Trips)) +
   geom_line() +
   facet_grid(vars(State, Region, Purpose))
 ```
 
 ## STL-based features
-\fontsize{9}{9}\sf
 
 Find the most trended time series:
 
-```{r extreme3}
-most_trended <- tourism %>%
-  features(Trips, feat_stl) %>%
-  filter(trend_strength == max(trend_strength))
-```
+\fontsize{9}{9}\sf
 
-\pause\vspace*{-0.3cm}
-
-```{r extreme4, fig.height=2}
+```{r extreme3, fig.height=2}
 tourism %>%
-  right_join(most_trended, by = c("State", "Region", "Purpose")) %>%
+  features(Trips, feat_stl) %>%
+  filter(trend_strength == max(trend_strength)) %>%
+  left_join(tourism, by = c("State", "Region", "Purpose")) %>%
   ggplot(aes(x = Quarter, y = Trips)) +
   geom_line() +
   facet_grid(vars(State, Region, Purpose))
@@ -350,6 +363,8 @@ tourism_features <- tourism %>%
   features(Trips, feature_set(pkgs = "feasts"))
 ```
 
+\vspace*{-0.5cm}\fontsize{8}{8}\sf
+
 ```{r echo=FALSE}
 tourism_features
 ```
@@ -360,15 +375,17 @@ All features from the feasts package
 \end{alertblock}
 \end{textblock}
 
-## Time series features
-\fontsize{8}{8}\sf
+## Reduced feature space
+\fontsize{9}{9}\sf
 
 ```{r pcatable}
 pcs <- tourism_features %>%
   select(-State, -Region, -Purpose) %>%
   prcomp(scale = TRUE) %>%
-  broom::augment(tourism_features)
+  augment(tourism_features)
 ```
+
+\vspace*{-0.5cm}\fontsize{8}{8}\sf
 
 ```{r echo=FALSE}
 pcs
@@ -380,7 +397,7 @@ Principal components based on all features from the feasts package
 \end{alertblock}
 \end{textblock}
 
-## Time series features
+## Reduced feature space
 \fontsize{9}{9}\sf
 
 \begin{textblock}{3.3}(.4,3)
@@ -397,7 +414,7 @@ pcs %>% ggplot(aes(x=.fittedPC1, y=.fittedPC2)) +
 \placefig{4}{2.6}{height=6.4cm, width=12cm}{pca1}
 \vspace*{10cm}
 
-## Time series features
+## Reduced feature space
 \fontsize{9}{9}\sf
 
 \begin{textblock}{3.3}(.4,3)
@@ -414,7 +431,7 @@ pcs %>% ggplot(aes(x=.fittedPC1, y=.fittedPC2, col=State)) +
 \placefig{4}{2.6}{height=6.4cm, width=12cm}{pca2}
 \vspace*{10cm}
 
-## Time series features
+## Reduced feature space
 \fontsize{9}{9}\sf
 
 \begin{textblock}{3.3}(.4,3)
@@ -430,7 +447,6 @@ pcs %>% ggplot(aes(x=.fittedPC1, y=.fittedPC2, col=Purpose)) +
 
 \placefig{4}{2.6}{height=6.4cm, width=12cm}{pca3}
 \vspace*{10cm}
-
 
 ## Anomaly detection using time series features
 \fontsize{9}{9}\sf
@@ -474,43 +490,24 @@ out %>%
   ggtitle("Outlying time series in PC space")
 ```
 
-
-# Probabilistic forecasting for large time series 
-
- * ensemble and hybrid forecasts
+# Probabilistic forecasting for large time series
 
 ```{r austa, include=FALSE}
-# Grab ABS data
-austa <- readxl::read_excel("data/340101.xls", sheet = "Data1", skip = 9) %>%
-  rename(date = `Series ID`, value = A85375847A) %>%
-  select(date, value) %>%
-  transmute(
-    Month = yearmonth(date),
-    Visitors = value / 1e3
-  ) %>%
-  bind_rows(tibble(
-    Month = yearmonth(seq(as.Date("2021-06-01"), by = "1 month", length = 7)),
-    Visitors = NA_real_
-  )) %>%
-  as_tsibble(index = Month) %>%
-  filter(Month >= yearmonth("2000 Jan"))
+austa <- tourism %>% summarise(Trips = sum(Trips)/1e3)
 # Fit ETS model
 fit <- austa %>%
-  filter(Month < yearmonth("2018 Jan")) %>%
-  model(ETS(Visitors))
+  model(ETS(Trips ~ trend("A")))
 # Product forecasts
-fc <- forecast(fit, h = 48) %>%
-  mutate(Month = as.Date(Month))
+fc <- forecast(fit, h = 16)
 # Simulate 100 future sample paths
 set.seed(1967)
 sim <- fit %>%
-  generate(h = 48, times = 100) %>%
+  generate(h = 16, times = 100) %>%
   mutate(
     replicate = factor(.rep, levels = 1:100, labels = paste("Future", 1:100)),
     .rep = as.numeric(.rep)
   ) %>%
-  as_tibble() %>%
-  mutate(Month = as.Date(Month))
+  as_tibble()
 # Nice colors
 cols <- scale_color_manual(
   values = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442", sample(rainbow(93))),
@@ -519,22 +516,21 @@ cols <- scale_color_manual(
 )
 # Now build up some plots with alignment
 p1 <- austa %>%
-  mutate(Visitors = if_else(Month >= yearmonth("2018 Jan"), NA_real_, Visitors)) %>%
+  bind_rows(new_data(austa, 16)) %>%
   as_tibble() %>%
-  mutate(Month = as.Date(Month)) %>%
-  ggplot(aes(x = Month, y = Visitors)) +
+  ggplot(aes(x = Quarter, y = Trips)) +
   geom_line() +
   labs(
-    x = "Month",
-    y = "Thousands of visitors",
-    title = "Total short-term visitors to Australia"
+    x = "Quarter",
+    y = "Overnight trips (millions)",
+    title = "Total Australian domestic overnight trips"
   ) +
-  scale_x_date(
-    breaks = seq(as.Date("2000-01-01"), by = "5 years", l = 5),
-    labels = paste("Jan", seq(2000, 2020, by = 5)),
-    minor_breaks = seq(as.Date("2001-01-01"), by = "1 year", l = 25)
+  scale_x_yearquarter(
+    breaks = yearquarter(seq(as.Date("2000-01-01"), by = "5 years", l = 5)),
+    labels = paste(seq(2000, 2020, by = 5),"Q1"),
+    minor_breaks = yearquarter(seq(as.Date("2000-01-01"), by = "1 year", l = 25)),
   ) +
-  ylim(min(austa$Visitors, sim$.sim, na.rm = TRUE), max(austa$Visitors, sim$.sim, na.rm = TRUE))
+  ylim(min(austa$Trips, sim$.sim, na.rm = TRUE), max(austa$Trips, sim$.sim, na.rm = TRUE))
 p2 <- p1 + cols +
   geom_line(aes(y = .sim, group = replicate, color = replicate),
     data = sim %>% filter(.rep <= 1)
@@ -559,19 +555,14 @@ p7 <- p1 +
   guides(color = "none")
 p8 <- p7 + autolayer(fc, level = c(50, 90))
 p9 <- p8 + coord_cartesian(xlim = as.Date(c("2013-01-01", "2021-08-01"))) +
-  scale_x_date(
-    breaks = seq(as.Date("2000-01-01"), by = "2 years", l = 11),
-    labels = paste("Jan", seq(2000, 2020, by = 2)),
-    minor_breaks = seq(as.Date("2001-01-01"), by = "1 year", l = 25)
+  scale_x_yearquarter(
+    breaks = yearquarter(seq(as.Date("2000-01-01"), by = "2 years", l = 11)),
+    labels = paste(seq(2000, 2020, by = 2),"Q1"),
+    minor_breaks = yearquarter(seq(as.Date("2000-01-01"), by = "1 year", l = 25)),
   )
-p10 <- p9 +
-  geom_line(
-    color = "black",
-    data = austa %>% filter(Month >= yearmonth("2018 Jan")) %>% mutate(Month = as.Date(Month))
-  )
-aligned_plots <- align_patches(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+aligned_plots <- align_patches(p1, p2, p3, p4, p5, p6, p7, p8, p9)
 
-for (i in seq(10)) {
+for (i in seq(9)) {
   pdf(paste0("figs/austa", i, ".pdf"), height = 3.3, width = 8)
   print(aligned_plots[[i]])
   dev.off()
@@ -631,77 +622,21 @@ for (i in seq(10)) {
 \includegraphics[height=8cm]{austa9}
 \simfutures
 
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa10}
-\simfutures
-
 ## Model fitting
-\fontsize{10}{11}\sf
+\fontsize{9}{9}\sf
 
 ```{r holiday-model}
-holiday_fit <- holidays %>%
+tourism_fit <- tourism %>%
+  filter(year(Quarter) < 2015) %>%
   model(
-    snaive = SNAIVE(Trips),
-    naive = NAIVE(Trips),
     ets = ETS(Trips),
     arima = ARIMA(Trips)
-  )
+  ) %>%
+  mutate(ensemble = (ets + arima)/2)
 ```
-
 
 ```{r holiday-model2, echo=FALSE, dependson='holiday-model'}
-holiday_fit
-```
-
-## Model fitting
-\fontsize{10}{11}\sf
-
-```{r holiday-model3, dependson='holiday-model'}
-holiday_fit %>%
-  filter(State == "VIC") %>%
-  select(arima) %>%
-  report()
-```
-
-## Model fitting
-\fontsize{10}{11}\sf
-
-```{r holiday-model4, dependson='holiday-model'}
-glance(holiday_fit)
-```
-
-## Model fitting
-\fontsize{10}{11}\sf
-
-```{r holiday-model5, dependson='holiday-model'}
-tidy(holiday_fit)
-```
-
-## Model fitting
-\fontsize{10}{11}\sf
-
-```{r holiday-model6, dependson='holiday-model'}
-augment(holiday_fit)
-```
-
-## Ljung-Box test
-
-```{r lbtest, echo=TRUE, fig.height=4, warning = FALSE}
-augment(holiday_fit) %>%
-  filter(State == "VIC", .model == "arima") %>%
-  features(.resid, ljung_box, dof = 2, lag = 8)
-```
-
-## `gg_tsresiduals()` function
-\fontsize{9}{10}\sf
-
-```{r ggtsresiduals, echo=TRUE, warning = FALSE, fig.height=3}
-holiday_fit %>%
-  filter(State == "VIC") %>%
-  select(arima) %>%
-  gg_tsresiduals()
+tourism_fit
 ```
 
 ## Producing forecasts
@@ -709,56 +644,62 @@ holiday_fit %>%
 \fontsize{9}{9}\sf
 
 ```{r holiday-fc, echo = TRUE, dependson='holiday-model'}
-holiday_fc <- holiday_fit %>%
-  forecast(h = "2 years")
+tourism_fc <- tourism_fit %>%
+  forecast(h = "3 years")
 ```
 
 ```{r holiday-fbl, echo = FALSE, dependson='holiday-fc'}
-print(holiday_fc, n = 10)
+print(tourism_fc, n = 10)
 ```
 
 ## Visualising forecasts
 \fontsize{9}{9}\sf
 
-```{r holiday-fc-plot, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
-holiday_fc %>%
-  filter(State == "VIC") %>%
-  autoplot(holidays, level = NULL) +
-  labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
+```{r fcviz, include=FALSE, dependson='holiday-fc'}
+p1 <- tourism_fc %>%
+  filter(Region == "Adelaide", Purpose=="Business") %>%
+  autoplot(tourism %>% filter(year(Quarter) < 2015), level = NULL) +
+  labs(title = "Adelaide Business Trips", y = "Thousands of visitors") +
+  guides(color = guide_legend(title = "Forecast"))
+p2 <- tourism_fc %>%
+  filter(Region == "Adelaide", Purpose=="Business", .model == "arima") %>%
+  autoplot(tourism %>% filter(year(Quarter) < 2015)) +
+  labs(title = "Adelaide Business Trips", y = "Thousands of visitors") +
+  guides(color = guide_legend(title = "Forecast"))
+aligned_plots <- align_patches(p1,p2)
+for (i in seq(2)) {
+  pdf(paste0("figs/austafc", i, ".pdf"), height = 2.9, width = 8)
+  print(aligned_plots[[i]])
+  dev.off()
+}
+```
+
+```r
+tourism_fc %>%
+  filter(Region == "Adelaide", Purpose=="Business") %>%
+  autoplot(tourism, level = NULL) +
+  labs(title = "Adelaide Business Trips", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
+\includegraphics[height=8cm]{austafc1}
 
 ## Visualising forecasts
 \fontsize{9}{9}\sf
 
-```{r holiday-fc-plot2, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
-holiday_fc %>%
-  filter(State == "VIC", .model == "arima") %>%
-  autoplot(holidays) +
-  labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
+```r
+tourism_fc %>%
+  filter(Region == "Adelaide", Purpose=="Business", .model == "arima") %>%
+  autoplot(tourism) +
+  labs(title = "Adelaide Business Trips", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
-## Prediction intervals
-\fontsize{10}{12}\sf
+\includegraphics[height=8cm]{austafc2}
 
-```{r holiday-fc-interval, dependson='holiday-fc'}
-holiday_fc %>% hilo(level = 95)
-```
+# Evaluating probabilistic forecasts
 
-## Prediction intervals
-
- * Point forecasts often useless without a measure of uncertainty (such as prediction intervals).
- * Prediction intervals require a stochastic model (with random errors, etc).
- * For most models, prediction intervals get wider as the forecast horizon increases.
- * Use `level` argument to control coverage.
- * Check residual assumptions before believing them.
- * Usually too narrow due to unaccounted uncertainty.
-
-# Evaluating forecast accuracy
-
-## Training and test sets
+## Evaluating probabilistic forecasts
 
 ```{r traintest, fig.height=1, echo=FALSE, cache=TRUE}
 train <- 1:18
@@ -771,39 +712,6 @@ points(test, test * 0 + 0.5, pch = 19, col = "#D55E00")
 text(26, 0.5, "time")
 text(10, 1, "Training data", col = "#0072B2")
 text(21, 1, "Test data", col = "#D55E00")
-```
-
--   A model which fits the training data well will not necessarily forecast well.
--   A perfect fit can always be obtained by using a model with enough parameters.
--   Over-fitting a model to data is just as bad as failing to identify a systematic pattern in the data.
-  * The test set must not be used for *any* aspect of model development or calculation of forecasts.
-  * Forecast accuracy is based only on the test set.
-
-## Measures of forecast accuracy
-
-```{r holidays-fc-1, echo=FALSE, fig.height=4}
-vic_holidays <- holidays %>% filter(State == "VIC")
-train <- vic_holidays %>% filter(year(Quarter) <= 2015)
-vic_fit <- train %>%
-  model(
-    snaive = SNAIVE(Trips),
-    naive = NAIVE(Trips),
-    ets = ETS(Trips),
-    arima = ARIMA(Trips)
-  )
-vic_fc <- vic_fit %>%
-  forecast(h = 8)
-vic_fc %>%
-  autoplot(vic_holidays, level = NULL) +
-  labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
-  guides(color = guide_legend(title = "Forecast"))
-```
-
-## Measures of forecast accuracy
-\fontsize{10}{10}\sf
-
-```{r holidays-train-accuracy}
-accuracy(vic_fc, holidays)
 ```
 
 ```{r tscvplots, echo=FALSE}
@@ -840,156 +748,254 @@ tscv_plot <- function(.init, .step, h = 1) {
 }
 ```
 
-## Time series cross-validation {-}
-
-**Traditional evaluation**
-
-```{r traintest1, fig.height=1, echo=FALSE, dependson="tscvplots", message=FALSE}
-tscv_plot(.init = 18, .step = 20, h = 1:8) +
-  geom_text(aes(x = 10, y = 0.8, label = "Training data"), color = "#0072B2") +
-  geom_text(aes(x = 21, y = 0.8, label = "Test data"), color = "#D55E00") +
-  ylim(1, 0)
+```{r qs, include=FALSE}
+# Run to generate the graphs
+qp <- function(p, y) {
+  if (length(p) > 1 & length(y) > 1) {
+    stop("Either p or y should be a scalar")
+  }
+  fp <- qgamma(p, 2)
+  2 * (1 - p) * abs(y - fp) * (y < fp) + 2 * p * abs(y - fp) * (y >= fp)
+}
+gamma <- tibble(
+  y = seq(0, 10, l = 101),
+  f = dgamma(y, 2)
+)
+actual <- 3
 ```
 
-\pause
+\vspace*{1cm}
 
-**Time series cross-validation**
-
-```{r tscvggplot1, echo=FALSE, message=FALSE}
-tscv_plot(.init = 3, .step = 1, h = 1) +
-  geom_text(aes(x = 21, y = 0, label = "h = 1"), color = "#D55E00")
+```{r pdf1, dependson='qs', echo=FALSE}
+# Single pdf graph for median
+prob <- 0.5
+qactual <- qgamma(prob, 2)
+gamma %>%
+  ggplot(aes(x = y, y = f)) +
+  geom_line() +
+  geom_point(aes(x = actual, y = y), data = tibble(actual = actual, y = 0), col="#D55E00") +
+  geom_label(aes(x = actual, y = 0.02, label = "Actual"), col="#D55E00") +
+  labs(y = "Forecast probability density", x = latex2exp::TeX("Quantile $q_{p}$")) +
+  geom_line(aes(x = y, y = f),
+    col = "blue", linetype = 2,
+    data = tibble(y = rep(qactual, 2), f = c(dgamma(qactual, 2), 0))
+  ) +
+  geom_label(aes(x = qactual, y = 0.02, label = "Median"), col = "blue") +
+  geom_label(aes(x = qactual, y = -0.01, label = "0.5 quantile"), col = "blue") +
+  coord_cartesian(ylim = c(-0, 0.375), xlim = c(0, 10), expand = FALSE, clip = "off")
 ```
 
+## Evaluating probabilistic forecasts
 
-## Time series cross-validation {-}
-
-**Traditional evaluation**
-
-```{r traintest2, ref.label="traintest1", fig.height=1, echo=FALSE, message=FALSE}
+```{r ref.label="traintest", fig.height=1, echo=FALSE, cache=TRUE}
 ```
 
-**Time series cross-validation**
+\vspace*{1cm}
 
-```{r tscvggplot2, echo=FALSE,  dependson="tscvplots", message=FALSE}
-tscv_plot(.init = 3, .step = 1, h = 2) +
-  geom_text(aes(x = 21, y = 0, label = "h = 2"), color = "#D55E00")
+```{r pdf2, dependson='qs', echo=FALSE}
+# Single pdf graph for 0.8 quantile
+prob <- 0.9
+qactual <- qgamma(prob, 2)
+gamma %>%
+  ggplot(aes(x = y, y = f)) +
+  geom_line() +
+  geom_point(aes(x = actual, y = y), data = tibble(actual = actual, y = 0), col="#D55E00") +
+  geom_label(aes(x = actual, y = 0.02, label = "Actual"), col="#D55E00") +
+  labs(y = "Forecast probability density", x = latex2exp::TeX("Quantile $q_{p}$")) +
+  geom_line(aes(x = y, y = f),
+    col = "blue", linetype = 2,
+    data = tibble(y = rep(qactual, 2), f = c(dgamma(qactual, 2), 0))
+  ) +
+  geom_label(aes(x = qactual, y = -0.01, label = paste(sprintf("%.2f", prob), "quantile")), col = "blue") +
+  coord_cartesian(ylim = c(-0, 0.375), xlim = c(0, 10), expand = FALSE, clip = "off")
 ```
 
-## Time series cross-validation {-}
+## Evaluating probabilistic forecasts
 
-**Traditional evaluation**
-
-```{r traintest3, ref.label="traintest1", fig.height=1, echo=FALSE, message=FALSE}
+```{r pdfqs, dependson='qs', echo=FALSE}
+# pdf plus quantile score graph for several quantiles
+prob <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+qactual <- qgamma(prob, 2)
+qpactual <- qp(prob, actual)
+for (i in seq_along(prob)) {
+  p1 <- gamma %>%
+    ggplot(aes(x = y, y = f)) +
+    geom_line() +
+    geom_point(aes(x = actual, y = y), data = tibble(actual = actual, y = 0), col="#D55E00") +
+    labs(y = "Forecast probability density", x = latex2exp::TeX("Quantile $q_{p}$")) +
+    geom_line(aes(x = y, y = f),
+      col = "blue", linetype = 2,
+      data = tibble(y = rep(qactual[i], 2), f = c(dgamma(qactual[i], 2), 0))
+    ) +
+    geom_label(aes(x = actual, y = 0.03, label = "Actual"), col="#D55E00") +
+    geom_label(aes(x = qactual[i], y = -0.02, label = paste(sprintf("%.2f", prob[i]), "quantile")), col = "blue") +
+    coord_cartesian(ylim = c(-0, 0.375), xlim = c(0, 10), expand = FALSE, clip = "off")
+  p2 <- tibble(
+    y = seq(0, 10, l = 101),
+    Q = qp(prob[i], y)
+  ) %>%
+    ggplot(aes(x = y, y = Q)) +
+    geom_line() +
+    labs(
+      x = latex2exp::TeX("Quantile $q_{p}$"),
+      y = latex2exp::TeX("Quantile score $S_{p}$")
+    ) +
+    geom_line(aes(x = y, y = Q),
+      col = "red", linetype = 2,
+      data = tibble(y = c(actual, actual), Q = c(14.5, qpactual[i]))
+    ) +
+    geom_line(aes(x = y, y = Q),
+      col = "red", linetype = 2,
+      data = tibble(y = c(actual, 0), Q = rep(qpactual[i], 2))
+    ) +
+    geom_line(aes(x = y, y = f),
+      col = "blue", linetype = 2,
+      data = tibble(y = rep(qactual[i], 2), f = c(0, 13.5))
+    ) +
+    coord_cartesian(ylim = c(0, 11.6), xlim = c(0, 10), expand = FALSE, clip = "off")
+  pdf(paste0("figs/pdfqs", i, ".pdf"), width = 15 / 1.5, height = 8 / 1.5)
+  print(p1 / p2)
+  crop::dev.off.crop()
+  if(i==5) {
+    pdf(paste0("figs/pdfqs", i, "a.pdf"), width = 14.9 / 1.5, height = 4 / 1.5)
+    print(p1)
+    crop::dev.off.crop()
+  }
+}
 ```
 
-**Time series cross-validation**
+\only<7>{\placefig{0.2}{1.4}{width=14.7cm,height=20cm}{pdfqs1}}
+\only<6>{\placefig{0.2}{1.4}{width=14.7cm,height=20cm}{pdfqs2}}
+\only<5>{\placefig{0.2}{1.4}{width=14.7cm,height=20cm}{pdfqs3}}
+\only<4>{\placefig{0.2}{1.4}{width=14.7cm,height=20cm}{pdfqs4}}
+\only<3>{\placefig{0.2}{1.4}{width=14.7cm,height=20cm}{pdfqs5}}
+\only<1-2>{\placefig{0.4}{1.5}{width=14.4cm,height=20cm}{pdfqs5a}}
 
-```{r tscvggplot3, echo=FALSE,  dependson="tscvplots", message=FALSE}
-tscv_plot(.init = 3, .step = 1, h = 3) +
-  geom_text(aes(x = 21, y = 0, label = "h = 3"), color = "#D55E00")
+\only<2->{\begin{textblock}{5.8}(9.8,.4)\fontsize{11}{12}\sf
+\begin{alertblock}{}\vspace*{-0.3cm}
+\begin{align*}
+q_{p} &= \text{quantile forecast with prob. $p$}\\
+y &= \text{observation}
+\end{align*}
+\end{alertblock}\vspace*{-0.3cm}
+\begin{alertblock}{Quantile score}\vspace*{-0.1cm}
+$$
+  S_p(y) = \begin{cases}
+  2(1 - p) \big|y - q_{p}\big|, & \text{if $y < q_{p}$}\\
+  2p \big|y - q_{p}\big|, & \text{if $y \ge q_{p}$} \end{cases}
+$$
+\end{alertblock}
+\end{textblock}}
+
+
+## Evaluating probabilistic forecasts
+
+```{r pdfqs2, include=FALSE, dependson='qs'}
+qs <- seq(0, 10, l = 200)
+prob <- pgamma(qs, 2)
+prob <- c(prob[prob <= 0.999], 0.9999)
+for (i in seq_along(prob)) {
+  qactual <- qgamma(prob[i], 2)
+  qpactual <- qp(prob[i], actual)
+  p1 <- gamma %>%
+    ggplot(aes(x = y, y = f)) +
+    geom_line() +
+    geom_point(aes(x = actual, y = y), data = tibble(actual = actual, y = 0), col = "#D55E00") +
+    geom_label(aes(x = actual, y = 0.02, label = "Actual"), col = "#D55E00") +
+    labs(y = "Forecasting probability density", x = latex2exp::TeX("Quantile $q_{p}$")) +
+    geom_line(aes(x = y, y = f),
+      col = "blue", linetype = 2,
+      data = tibble(y = rep(qactual, 2), f = c(dgamma(qactual, 2), -0.1))
+    ) +
+    coord_cartesian(ylim = c(-0, 0.375), xlim = c(0, 10), expand = FALSE, clip = "off")
+  p2 <- tibble(
+    y = seq(0, 10, l = 101),
+    Q = qp(prob[i], y)
+  ) %>%
+    ggplot(aes(x = y, y = Q)) +
+    geom_line() +
+    labs(
+      x = latex2exp::TeX("Quantile $q_{p}$"),
+      y = latex2exp::TeX("Quantile score $S_{p}$")
+    ) +
+    geom_line(aes(x = y, y = Q),
+      col = "red", linetype = 2,
+      data = tibble(y = rep(actual, 2), Q = c(14.5, qpactual))
+    ) +
+    geom_line(aes(x = y, y = Q),
+      col = "red", linetype = 2,
+      data = tibble(y = c(actual, -1), Q = rep(qpactual, 2))
+    ) +
+    geom_line(aes(x = y, y = f),
+      col = "blue", linetype = 2,
+      data = tibble(y = rep(qactual, 2), f = c(0, 12))
+    ) +
+    geom_label(aes(x = qactual, y = 11.6, label = paste(sprintf("%.3f", prob[i]), "quantile")), col = "blue") +
+    coord_cartesian(ylim = c(0, 11.6), xlim = c(0, 10), expand = FALSE, clip = "off")
+
+  p3data <- tibble(
+    p = prob,
+    Q = qp(prob, actual)
+  ) %>%
+    filter(p <= prob[i])
+  p3 <- p3data %>%
+    ggplot(aes(x = p, y = Q)) +
+    geom_line(col = "red") +
+    geom_polygon(
+      fill = "#ffbbbb",
+      data = bind_rows(p3data, tibble(p = prob[i], Q = 0))
+    ) +
+    geom_line(data = tibble(p = c(prob[i], 1), Q = rep(qpactual, 2)), col = "red", linetype = 2) +
+    # geom_point(data=tibble(p=prob[i],Q=qpactual), col='red') +
+    labs(
+      x = latex2exp::TeX("Probability p"),
+      y = latex2exp::TeX("Quantile score $S_{p}$")
+    ) +
+    coord_cartesian(ylim = c(0, 11.6), xlim = c(0, 1), expand = FALSE, clip = "off")
+
+  pdf(file = paste0("figs/qs", i, ".pdf"), width = 15 / 1.5, height = 8 / 1.5)
+  print((plot_spacer() | p1) / (p3 | p2))
+  crop::dev.off.crop()
+}
 ```
 
+\begin{textblock}{18}(0.3,1.4)
+\animategraphics[width=14cm,height=20cm,keepaspectratio]{185}{figs/qs}{1}{185}
+\end{textblock}
 
-## Time series cross-validation {-}
+## Evaluating probabilistic forecasts
 
-**Traditional evaluation**
+\begin{textblock}{18}(0.3,1.4)
+\includegraphics[width=14cm,height=20cm,keepaspectratio]{figs/qs185}
+\end{textblock}
 
-```{r traintest4, ref.label="traintest1", fig.height=1, echo=FALSE, message=FALSE}
+\only<2>{\begin{textblock}{4}(2,7)\fontsize{11}{11}\sf
+\textcolor{red}{Area = CRPS}
+\end{textblock}}
+
+
+## Evaluating probabilistic forecasts
+\fontsize{10}{11}\sf
+
+```{r fcaccuracy0, dependson='holiday-fc'}
+tourism_fc %>%
+  accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS))
 ```
-
-**Time series cross-validation**
-
-```{r tscvggplot4, echo=FALSE,  dependson="tscvplots", message=FALSE}
-tscv_plot(.init = 3, .step = 1, h = 4) +
-  geom_text(aes(x = 21, y = 0, label = "h = 4"), color = "#D55E00")
-```
-
-\only<2>{\begin{textblock}{6.7}(.3,6.3)\begin{block}{}\fontsize{12}{13}\sf
-\begin{itemize}\tightlist
-\item Forecast accuracy averaged over test sets.
-\item Also known as "evaluation on a rolling forecasting origin"
-\end{itemize}\end{block}\end{textblock}}
 
 \vspace*{10cm}
 
-## Time series cross-validation {-}
 
-\fontsize{12}{13}\sf
-
-Stretch with a minimum length of 4 years, growing by 1 quarter each step.
-
-```{r vichol-stretch}
-vic_holiday_stretch <- holidays %>%
-  filter(State == "VIC") %>%
-  stretch_tsibble(.init = 16, .step = 1)
-```
-\fontsize{10}{11}\sf
-```{r vichol-stretch-print, echo = FALSE, dependson="vichol-stretch"}
-vic_holiday_stretch
-```
-
-## Time series cross-validation {-}
-
+## Evaluating probabilistic forecasts
 \fontsize{10}{11}\sf
 
-```{r vichol-fit, dependson="vichol-stretch"}
-fit_cv <- vic_holiday_stretch %>%
-  model(
-    ets = ETS(Trips),
-    arima = ARIMA(Trips),
-    snaive = SNAIVE(Trips)
-  )
+```{r fcaccuracy1, dependson='holiday-fc'}
+tourism_fc %>%
+  accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS)) %>%
+  group_by(.model) %>%
+  summarise(MSE = mean(MSE), CRPS=mean(CRPS))
 ```
 
-\fontsize{10}{11}\sf
-```{r vichol-fit-print, echo = FALSE, dependson="vichol-fit"}
-print(fit_cv, n = 6)
-```
-
-## Time series cross-validation {-}
-
-\fontsize{10}{11}\sf
-
-Produce one step ahead forecasts from all models.
-
-```{r vichol-fc, dependson="vichol-fit"}
-fc_cv <- fit_cv %>%
-  forecast(h = 1)
-```
-
-```{r vichol-fc-print, echo = FALSE, dependson="vichol-fc"}
-fc_cv %>%
-  select(-.model) %>%
-  print(n = 6)
-```
-
-## Time series cross-validation {-}
-
-\fontsize{10}{11}\sf
-
-```{r vichol-accuracy, dependson="vichol-fc"}
-# Cross-validated
-fc_cv %>% accuracy(holidays)
-```
-
-\fontsize{11}{11}\sf
-
-```{r, echo = FALSE, warning = FALSE, eval=FALSE, dependson="vichol-fc"}
-fc_cv %>%
-  accuracy(holidays) %>%
-  mutate(.type = "Cross-validation") %>%
-  bind_rows(
-    fb_stock %>%
-      model(RW(Close ~ drift())) %>%
-      accuracy()
-  ) %>%
-  transmute(Type = .type, RMSE, MAE, MAPE) %>%
-  gt::gt("Type") %>%
-  gt::fmt_number(columns = 2:4, decimals = 3) %>%
-  gt::as_latex()
-```
-
-A good way to choose the best forecasting model is to find the model with the smallest RMSE computed using time series cross-validation.
+\vspace*{10cm}
 
 # Forecast reconciliation
 
@@ -1086,7 +1092,6 @@ tourism %>%
 ## Creating aggregates
 \fontsize{13}{15}\sf
 
- * Similar to `summarise()` but using the key structure
  * A grouped structure is specified using `grp1 * grp2`
  * A nested structure is specified via `parent / child`.
  * Groups and nesting can be mixed:
@@ -1097,7 +1102,6 @@ tourism %>%
 
  * All possible aggregates are produced.
  * These are useful when forecasting at different levels of aggregation.
-
 
 ## The problem
 \fontsize{13}{14}\sf
@@ -1223,11 +1227,11 @@ where $\bW_h$ is the $h$-step base forecast error covariance matrix.
 
 \alert{\textbf{Problem:}} $\bW_h$ hard to estimate, especially for $h>1$.
 
-\alert{Solutions:}\vspace*{-0.4cm}
+\alert{Solutions:}\vspace*{-0.2cm}
 
- * Ignore $\bW_h$ (OLS) [`min_trace(method='ols')`]
- * Assume $\bW_h = k_h\bW_1$ is diagonal (WLS) [`min_trace(method='wls')`]
- * Assume $\bW_h = k_h\bW_1$ and estimate it (GLS) [`min_trace(method='shrink')` (the default)]
+ * Ignore $\bW_h$ (OLS) 
+ * Assume $\bW_h = k_h\bW_1$ is diagonal (WLS)  
+ * Assume $\bW_h = k_h\bW_1$ and estimate it (GLS) --- the default uses a shrinkage covariance estimator
 
 ## Features
 \fontsize{15}{17}\sf
@@ -1246,10 +1250,10 @@ tourism_agg <- tourism %>%
     Trips = sum(Trips)
   )
 fc <- tourism_agg %>%
-  filter_index(. ~ "2015 Q4") %>%
+  filter(year(Quarter) < 2015) %>%
   model(ets = ETS(Trips)) %>%
   reconcile(ets_adjusted = min_trace(ets)) %>%
-  forecast(h = "2 years")
+  forecast(h = "3 years")
 ```
 
 ## Example: Australian tourism
@@ -1307,65 +1311,34 @@ fc %>%
   autoplot(tourism_agg, level = 95)
 ```
 
-## Example: Australian tourism
-\fontsize{10}{10}\sf
-
-```{r fctourismcomb}
-fc <- tourism_agg %>%
-  filter_index(. ~ "2015 Q4") %>%
-  model(
-    ets = ETS(Trips),
-    arima = ARIMA(Trips)
-  ) %>%
-  mutate(
-    comb = (ets + arima) / 2
-  ) %>%
-  reconcile(
-    ets_adj = min_trace(ets),
-    arima_adj = min_trace(arima),
-    comb_adj = min_trace(comb)
-  ) %>%
-  forecast(h = "2 years")
-```
-
 ## Forecast evaluation
 \fontsize{10}{11}\sf
 
-```{r fcaccuracy, dependson='fctourismcomb'}
-fc %>% accuracy(tourism_agg)
+```{r fcaccuracy, dependson='fctourism'}
+fc %>% 
+  accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS))
 ```
+
+\vspace*{10cm}
 
 ## Forecast evaluation
 \fontsize{11}{11}\sf
 
-```{r fcaccuracy2, dependson='fctourismcomb'}
+```{r fcaccuracy2, dependson='fctourism'}
 fc %>%
-  accuracy(tourism_agg) %>%
+  accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS)) %>%
   group_by(.model) %>%
-  summarise(MASE = mean(MASE)) %>%
-  arrange(MASE)
+  summarise(MSE = mean(MSE), CRPS=mean(CRPS))
 ```
 
-## Tidyverts developers
-
-\begin{textblock}{5.7}(0.4,1.4)
-\begin{block}{Earo Wang}
-\includegraphics[height=5.8cm]{earowang}
-\end{block}
-\end{textblock}
-
-\begin{textblock}{5.7}(6.75,1.4)
-\begin{block}{Mitchell O'Hara-Wild}
-\includegraphics[height=5.8cm]{mitch2}
-\end{block}
-\end{textblock}
+\vspace*{10cm}
 
 ## More information
 \fontsize{18}{20}\sf
 
  * Slides and papers: **robjhyndman.com**
  * Packages: **tidyverts.org**
- * Forecasting textbook using fable package: **OTexts.com/fpp3**
+ * Forecasting textbook using tidyverts package: **OTexts.com/fpp3**
 
 \begin{textblock}{8}(7.6,4.8)
 \begin{alertblock}{Find me at \dots}
@@ -1375,11 +1348,9 @@ fc %>%
 
 \href{https://robjhyndman.com}{\faicon{home} robjhyndman.com}
 
-\href{mailto:rob.hyndman@monash.edu}{\faicon{envelope}  rob.hyndman@monash.edu}
+\href{mailto:rob.hyndman@monash.edu}{\faicon{envelope} rob.hyndman@monash.edu}
 \end{alertblock}
 \end{textblock}
 \vspace*{10cm}
 
-
-
-
+ * ensemble and hybrid forecasts
