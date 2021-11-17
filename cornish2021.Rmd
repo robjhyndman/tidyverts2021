@@ -1,12 +1,13 @@
 ---
 title: "Feasts & fables: modern tools for time series analysis"
 author: "Rob J Hyndman"
-date: "FRB 28 Sep 2021"
+date: "17 November 2021"
 toc: true
 classoption: aspectratio=169
 output:
   binb::monash:
     colortheme: monashwhite
+    highlight: pygments
     fig_width: 8
     fig_height: 3.3
     keep_tex: no
@@ -35,7 +36,7 @@ options(
   width = 90,
   ggplot2.continuous.color = "viridis",
   ggplot2.continuous.fill = "viridis",
-  ggplot2.discrete.color = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
+  ggplot2.discrete.colour = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"),
   ggplot2.discrete.fill = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442")
 )
 
@@ -230,7 +231,19 @@ bind_rows(
 
 ## STL decomposition
 
-```{r, echo=FALSE, fig.height=6, fig.width=11}
+\begin{textblock}{5}(9,0.2)
+\begin{alertblock}{STL decomposition}
+\centerline{$y_t = T_t+S_t+R_t$}
+\end{alertblock}
+\end{textblock}
+\begin{textblock}{1}(8.6,2.6)
+$y_t$\\[.7cm]
+$T_t$\\[.7cm]
+$S_t$\\[.7cm]
+$R_t$
+\end{textblock}
+
+```{r, echo=FALSE, fig.height=6, fig.width=7}
 tourism %>%
   filter(Purpose == "Holiday", Region == "Snowy Mountains") %>%
   model(STL(Trips ~ trend(window = 13))) %>%
@@ -240,17 +253,14 @@ tourism %>%
        y = "Overnight trips (thousands)")
 ```
 
-## Strength of seasonality and trend
-
-\begin{alertblock}{STL decomposition}
-\centerline{$y_t = T_t+S_t+R_t$}
-\end{alertblock}
-
-### Seasonal strength
-$$\max\left(0, 1-\frac{\text{Var}(R_t)}{\text{Var}(S_t+R_t)}\right)$$
-
-### Trend strength
+\begin{textblock}{6}(9.5,2.6)
+\only<2->{\begin{block}{Trend strength}
 $$\max\left(0, 1-\frac{\text{Var}(R_t)}{\text{Var}(T_t+R_t)}\right)$$
+\end{block}}
+\only<3>{\begin{block}{Seasonal strength}
+$$\max\left(0, 1-\frac{\text{Var}(R_t)}{\text{Var}(S_t+R_t)}\right)$$
+\end{block}}
+\end{textblock}
 
 ## STL-based features
 \fontsize{9}{9}\sf
@@ -627,11 +637,8 @@ for (i in seq(9)) {
 
 ```{r holiday-model}
 tourism_fit <- tourism %>%
-  filter(year(Quarter) < 2015) %>%
-  model(
-    ets = ETS(Trips),
-    arima = ARIMA(Trips)
-  ) %>%
+  filter(year(Quarter) <= 2015) %>%
+  model(ets = ETS(Trips), arima = ARIMA(Trips)) %>%
   mutate(ensemble = (ets + arima)/2)
 ```
 
@@ -645,7 +652,7 @@ tourism_fit
 
 ```{r holiday-fc, echo = TRUE, dependson='holiday-model'}
 tourism_fc <- tourism_fit %>%
-  forecast(h = "3 years")
+  forecast(h = "2 years")
 ```
 
 ```{r holiday-fbl, echo = FALSE, dependson='holiday-fc'}
@@ -658,16 +665,18 @@ print(tourism_fc, n = 10)
 ```{r fcviz, include=FALSE, dependson='holiday-fc'}
 p1 <- tourism_fc %>%
   filter(Region == "Adelaide", Purpose=="Business") %>%
-  autoplot(tourism %>% filter(year(Quarter) < 2015), level = NULL) +
+  autoplot(tourism %>% filter(year(Quarter) <= 2015), level = NULL) +
   labs(title = "Adelaide Business Trips", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 p2 <- tourism_fc %>%
   filter(Region == "Adelaide", Purpose=="Business", .model == "arima") %>%
-  autoplot(tourism %>% filter(year(Quarter) < 2015)) +
+  autoplot(tourism %>% filter(year(Quarter) <= 2015)) +
   labs(title = "Adelaide Business Trips", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
-aligned_plots <- align_patches(p1,p2)
-for (i in seq(2)) {
+p3 <- p2 +
+  geom_line(aes(x=Quarter, y=Trips), data = tourism %>% filter(Region=="Adelaide", Purpose=="Business"))
+aligned_plots <- align_patches(p1,p2,p3)
+for (i in seq(3)) {
   pdf(paste0("figs/austafc", i, ".pdf"), height = 2.9, width = 8)
   print(aligned_plots[[i]])
   dev.off()
@@ -695,7 +704,8 @@ tourism_fc %>%
   guides(color = guide_legend(title = "Forecast"))
 ```
 
-\includegraphics[height=8cm]{austafc2}
+\only<1>{\includegraphics[height=8cm]{austafc2}}
+\only<2>{\includegraphics[height=8cm]{austafc3}}
 
 # Evaluating probabilistic forecasts
 
@@ -975,24 +985,35 @@ for (i in seq_along(prob)) {
 
 
 ## Evaluating probabilistic forecasts
-\fontsize{10}{11}\sf
+\fontsize{9}{9}\sf
 
-```{r fcaccuracy0, dependson='holiday-fc'}
+```{r fcaccuracya, dependson='holiday-fc'}
 tourism_fc %>%
   accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS))
 ```
 
 \vspace*{10cm}
 
+## Evaluating probabilistic forecasts
+\fontsize{9}{9}\sf
+
+```{r fcaccuracy0, dependson='holiday-fc'}
+tourism_fc %>%
+  accuracy(tourism, measures = list(SS_MSE=skill_score(MSE), SS_CRPS=skill_score(CRPS)))
+```
+
+\vspace*{10cm}
+
 
 ## Evaluating probabilistic forecasts
-\fontsize{10}{11}\sf
+\fontsize{9}{9}\sf
 
 ```{r fcaccuracy1, dependson='holiday-fc'}
 tourism_fc %>%
-  accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS)) %>%
+  accuracy(tourism, measures = list(SS_MSE=skill_score(MSE), SS_CRPS=skill_score(CRPS))) %>%
   group_by(.model) %>%
-  summarise(MSE = mean(MSE), CRPS=mean(CRPS))
+  summarise(SS_MSE = mean(SS_MSE), SS_CRPS=mean(SS_CRPS)) %>%
+  arrange(desc(SS_CRPS))
 ```
 
 \vspace*{10cm}
@@ -1140,7 +1161,7 @@ where
 
  * $\by_t$ is a vector of all series at time $t$
  * $\bm{b}_t$ is a vector of the most disaggregated series at time $t$
- * $\bS$ is a ``summing matrix'' containing the aggregation constraints.
+ * $\bS$ is a "summing matrix" containing the aggregation constraints.
 
 ## Hierarchical time series
 
@@ -1198,7 +1219,7 @@ $\bY_{t}= \begin{pmatrix}
 
 ## Forecasting notation
 
-Let $\hat{\by}_n(h)$ be vector of initial $h$-step forecasts, made at time $n$, stacked in same order as $\by_t$. \pause\newline  (In general, they will not ``add up''.)\pause
+Let $\hat{\by}_n(h)$ be vector of initial $h$-step forecasts, made at time $n$, stacked in same order as $\by_t$. \pause\newline  (In general, they will not "add up".)\pause
 
 \begin{block}{}
 Reconciled forecasts must be of the form:
@@ -1231,7 +1252,7 @@ where $\bW_h$ is the $h$-step base forecast error covariance matrix.
 
  * Ignore $\bW_h$ (OLS) 
  * Assume $\bW_h = k_h\bW_1$ is diagonal (WLS)  
- * Assume $\bW_h = k_h\bW_1$ and estimate it (GLS) --- the default uses a shrinkage covariance estimator
+ * Assume $\bW_h = k_h\bW_1$ and use a shrinkage estimator (GLS)
 
 ## Features
 \fontsize{15}{17}\sf
@@ -1242,7 +1263,7 @@ where $\bW_h$ is the $h$-step base forecast error covariance matrix.
  * Conceptually easy to implement: regression of base forecasts on structure matrix.
 
 ## Example: Australian tourism
-\fontsize{12}{13}\sf
+\fontsize{10}{11}\sf
 
 ```{r fctourism}
 tourism_agg <- tourism %>%
@@ -1250,64 +1271,32 @@ tourism_agg <- tourism %>%
     Trips = sum(Trips)
   )
 fc <- tourism_agg %>%
-  filter(year(Quarter) < 2015) %>%
-  model(ets = ETS(Trips)) %>%
-  reconcile(ets_adjusted = min_trace(ets)) %>%
-  forecast(h = "3 years")
+  filter(year(Quarter) <= 2015) %>%
+  model(ets = ETS(Trips), arima = ARIMA(Trips)) %>%
+  mutate(ensemble = (ets + arima)/2) %>%
+  reconcile(
+    ets_adj = min_trace(ets, method="mint_shrink"),
+    arima_adj = min_trace(arima, method="mint_shrink"),
+    ensemble_adj = min_trace(ensemble, method="mint_shrink")
+  ) %>%
+  forecast(h = "2 years")
 ```
 
 ## Example: Australian tourism
 \fontsize{10}{11}\sf
 
-```{r fctourism2, dependson='fctourism'}
+```{r fctourism3, dependson='fctourism', fig.height=3}
 fc %>%
-  filter(is_aggregated(Purpose) & is_aggregated(State)) %>%
+  filter(State == "SA" & is_aggregated(Region) & is_aggregated(Purpose)) %>%
   autoplot(tourism_agg, level = 95)
 ```
 
 ## Example: Australian tourism
 \fontsize{10}{11}\sf
 
-```{r fctourism3, dependson='fctourism'}
+```{r fctourism6, dependson='fctourism', fig.height=3}
 fc %>%
-  filter(is_aggregated(Purpose) & State == "VIC" &
-    is_aggregated(Region)) %>%
-  autoplot(tourism_agg, level = 95)
-```
-
-## Example: Australian tourism
-\fontsize{10}{11}\sf
-
-```{r fctourism4, dependson='fctourism'}
-fc %>%
-  filter(is_aggregated(Purpose) & Region == "Melbourne") %>%
-  autoplot(tourism_agg, level = 95)
-```
-
-## Example: Australian tourism
-\fontsize{10}{11}\sf
-
-```{r fctourism5, dependson='fctourism'}
-fc %>%
-  filter(is_aggregated(Purpose) & Region == "Snowy Mountains") %>%
-  autoplot(tourism_agg, level = 95)
-```
-
-## Example: Australian tourism
-\fontsize{10}{11}\sf
-
-```{r fctourism6, dependson='fctourism'}
-fc %>%
-  filter(Purpose == "Holiday" & Region == "Barossa") %>%
-  autoplot(tourism_agg, level = 95)
-```
-
-## Example: Australian tourism
-\fontsize{10}{11}\sf
-
-```{r fctourism7, dependson='fctourism'}
-fc %>%
-  filter(is_aggregated(Purpose) & Region == "MacDonnell") %>%
+  filter(Region == "Barossa" & Purpose == "Holiday") %>%
   autoplot(tourism_agg, level = 95)
 ```
 
@@ -1316,19 +1305,22 @@ fc %>%
 
 ```{r fcaccuracy, dependson='fctourism'}
 fc %>% 
-  accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS))
+  accuracy(tourism_agg, 
+    measures = list(SS_MSE=skill_score(MSE), SS_CRPS=skill_score(CRPS)))
 ```
 
 \vspace*{10cm}
 
 ## Forecast evaluation
-\fontsize{11}{11}\sf
+\fontsize{10}{11}\sf
 
 ```{r fcaccuracy2, dependson='fctourism'}
 fc %>%
-  accuracy(tourism, measures = list(MSE=MSE, CRPS=CRPS)) %>%
+  accuracy(tourism_agg, 
+    measures = list(SS_MSE=skill_score(MSE), SS_CRPS=skill_score(CRPS))) %>%
   group_by(.model) %>%
-  summarise(MSE = mean(MSE), CRPS=mean(CRPS))
+  summarise(SS_MSE = mean(SS_MSE), SS_CRPS=mean(SS_CRPS)) %>%
+  arrange(desc(SS_CRPS))
 ```
 
 \vspace*{10cm}
@@ -1344,7 +1336,7 @@ fc %>%
 \begin{alertblock}{Find me at \dots}
 \href{https://twitter.com/robjhyndman}{\faicon{twitter} @robjhyndman}
 
-\href{https://github.com/robjhyndman}{\faicon{github}  @robjhyndman}
+\href{https://github.com/robjhyndman}{\faicon{github} @robjhyndman}
 
 \href{https://robjhyndman.com}{\faicon{home} robjhyndman.com}
 
@@ -1352,5 +1344,3 @@ fc %>%
 \end{alertblock}
 \end{textblock}
 \vspace*{10cm}
-
- * ensemble and hybrid forecasts

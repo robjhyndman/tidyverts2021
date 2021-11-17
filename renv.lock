@@ -194,12 +194,12 @@
       "Version": "0.2.2.9000",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "distributional",
       "RemoteUsername": "mitchelloharawild",
+      "RemoteRepo": "distributional",
       "RemoteRef": "HEAD",
-      "RemoteSha": "f95c688174a05d93ce143e76be309633aff63137",
-      "Hash": "06467a7a0c09e5abf8f41ef65baf4bea"
+      "RemoteSha": "71a2b9b7a8c5528c60a90afda92c26e7415ee5b4",
+      "RemoteHost": "api.github.com",
+      "Hash": "aeee427b6845359385a7cc995ec64949"
     },
     "dplyr": {
       "Package": "dplyr",
@@ -234,12 +234,12 @@
       "Version": "0.3.1.9000",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "fable",
       "RemoteUsername": "tidyverts",
+      "RemoteRepo": "fable",
       "RemoteRef": "HEAD",
-      "RemoteSha": "5fb2e121ae7257229147c65bd9bdad3a575d218e",
-      "Hash": "df449cf3a3aee3df8c9922eae3554023"
+      "RemoteSha": "130db17927775bc74ef25e2a8f6af68c7eb6c00d",
+      "RemoteHost": "api.github.com",
+      "Hash": "adff180b3b0fac170261a2f30ef238c0"
     },
     "fabletools": {
       "Package": "fabletools",
@@ -383,6 +383,13 @@
       "Repository": "CRAN",
       "Hash": "3d5108641f47470611a32d0bdf357a72"
     },
+    "latex2exp": {
+      "Package": "latex2exp",
+      "Version": "0.5.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f96b4c78546d415fa21c99e83629543a"
+    },
     "lattice": {
       "Package": "lattice",
       "Version": "0.20-45",
@@ -427,10 +434,10 @@
     },
     "nlme": {
       "Package": "nlme",
-      "Version": "3.1-152",
+      "Version": "3.1-153",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "35de1ce639f20b5e10f7f46260730c65"
+      "Repository": "RSPM",
+      "Hash": "2d632e0d963a653a0329756ce701ecdd"
     },
     "numDeriv": {
       "Package": "numDeriv",
@@ -497,10 +504,10 @@
     },
     "readr": {
       "Package": "readr",
-      "Version": "2.0.2",
+      "Version": "2.1.0",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "7cb2c3ecfbc2c6786221d2c0c1f6ed68"
+      "Repository": "RSPM",
+      "Hash": "6c825746f32a68f4d8c40f94da5b1ac5"
     },
     "readxl": {
       "Package": "readxl",
@@ -560,10 +567,10 @@
     },
     "sf": {
       "Package": "sf",
-      "Version": "1.0-3",
+      "Version": "1.0-4",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "efcdd149b21e8948ce31d6d5b7a36729"
+      "Hash": "05ff2d3c63d954272f44deff24952879"
     },
     "slider": {
       "Package": "slider",
@@ -682,10 +689,10 @@
     },
     "vroom": {
       "Package": "vroom",
-      "Version": "1.5.5",
+      "Version": "1.5.6",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "9c3b3a3f947c7936cea7485349247e5b"
+      "Repository": "RSPM",
+      "Hash": "0af818392e60673cd8968ab9119c30a7"
     },
     "warp": {
       "Package": "warp",
