@@ -231,15 +231,16 @@
     },
     "fable": {
       "Package": "fable",
-      "Version": "0.3.1.9000",
+      "Version": "0.3.1",
       "Source": "GitHub",
+      "Repository": "CRAN",
       "RemoteType": "github",
       "RemoteUsername": "tidyverts",
       "RemoteRepo": "fable",
       "RemoteRef": "HEAD",
       "RemoteSha": "130db17927775bc74ef25e2a8f6af68c7eb6c00d",
       "RemoteHost": "api.github.com",
-      "Hash": "adff180b3b0fac170261a2f30ef238c0"
+      "Hash": "4c7c8f39b1066680ee18b75445aec17e"
     },
     "fabletools": {
       "Package": "fabletools",
@@ -277,27 +278,29 @@
     },
     "feasts": {
       "Package": "feasts",
-      "Version": "0.2.2.9000",
+      "Version": "0.2.2",
       "Source": "GitHub",
+      "Repository": "CRAN",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "feasts",
       "RemoteUsername": "tidyverts",
       "RemoteRef": "HEAD",
       "RemoteSha": "83fd0e80ec192b9f0f4a4f4a6592cd4511f8e7f7",
-      "Hash": "ce447fffae54cfa80d8ec49437b5501e"
+      "Hash": "ed128775226193ae3282c3a4a6875d6b"
     },
     "fpp3": {
       "Package": "fpp3",
-      "Version": "0.4.0.9000",
+      "Version": "0.4.0",
       "Source": "GitHub",
+      "Repository": "CRAN",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "fpp3-package",
       "RemoteUsername": "robjhyndman",
       "RemoteRef": "HEAD",
       "RemoteSha": "028b6a2c187f6e77f6e9dfbefed002c619f2335f",
-      "Hash": "c5763eb04343762fded46d1a937f12e0"
+      "Hash": "6db367055a58034c461b420a1c3908ef"
     },
     "generics": {
       "Package": "generics",
@@ -436,7 +439,7 @@
       "Package": "nlme",
       "Version": "3.1-153",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Hash": "2d632e0d963a653a0329756ce701ecdd"
     },
     "numDeriv": {
@@ -506,7 +509,7 @@
       "Package": "readr",
       "Version": "2.1.0",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Hash": "6c825746f32a68f4d8c40f94da5b1ac5"
     },
     "readxl": {
@@ -623,27 +626,29 @@
     },
     "tsibble": {
       "Package": "tsibble",
-      "Version": "1.1.0.9000",
+      "Version": "1.1.0",
       "Source": "GitHub",
+      "Repository": "CRAN",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "tsibble",
       "RemoteUsername": "tidyverts",
       "RemoteRef": "HEAD",
       "RemoteSha": "7261fbb858d5d1ab82cce7a7bebeffcb08e3915f",
-      "Hash": "e4c34f16f6c06469c8e0467353a81c76"
+      "Hash": "41c14017cbdb1818a0ca12b3a10823ab"
     },
     "tsibbledata": {
       "Package": "tsibbledata",
-      "Version": "0.3.0.9000",
+      "Version": "0.3.0",
       "Source": "GitHub",
+      "Repository": "CRAN",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "tsibbledata",
       "RemoteUsername": "tidyverts",
       "RemoteRef": "HEAD",
       "RemoteSha": "a61c5a1cbbcc8da30deed8c676acc4dccbd07cf1",
-      "Hash": "2df5aba340eb1c6fbc50428bf16bc6a0"
+      "Hash": "bfe0e2b0bd47c2fd42fb2e146b7c8da1"
     },
     "tzdb": {
       "Package": "tzdb",
@@ -691,7 +696,7 @@
       "Package": "vroom",
       "Version": "1.5.6",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Hash": "0af818392e60673cd8968ab9119c30a7"
     },
     "warp": {

@@ -1,0 +1,71 @@
+% Colors
+\setbeamercolor{description item}{fg=Orange}
+\definecolor{MonashBlue}{RGB}{70,95,108}
+
+% Packages
+\usepackage{bm,booktabs,animate,ragged2e,multicol,microtype,hyperref,alltt,framed}
+\DeclareUnicodeCharacter{03BC}{$\mu$}
+
+% Fonts
+\fontsize{13}{15}\sf
+\usepackage[scale=0.85]{sourcecodepro}
+\DisableLigatures{encoding = T1, family = tt*}
+\setbeamerfont{title}{series=\bfseries,parent=structure,size=\fontsize{18}{20}}
+\usepackage{fontawesome}
+
+% Tikz plots
+\usetikzlibrary{trees,shapes,arrows,matrix}
+\tikzstyle{decision} = [diamond, draw, fill=blue!20,
+    text width=4.5em, text badly centered, node distance=4cm, inner sep=0pt]
+\tikzstyle{block} = [rectangle, draw, fill=blue!20,
+    text width=5cm, text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, thick, -latex']
+\tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm,
+    minimum height=2em, text centered]
+\tikzstyle{connector} = [->,thick]
+
+% Figures
+\graphicspath{{figs/}}
+
+% Title page
+\setbeamerfont{title}{series=\bfseries,parent=structure,size={\fontsize{26}{30}}}
+\setbeamertemplate{title page}
+{\placefig{-0.01}{-0.01}{width=1.01\paperwidth,height=1.01\paperheight}{mitchell-luo-cO8_uKY532M-unsplash.jpg}
+\begin{textblock}{12.5}(.7,.2)\fontsize{18}{20}\sf
+{\color{MonashBlue}\raggedright\usebeamerfont{title}\par Feasts \& fables \newline\fontsize{18}{20}\sf\bfseries Modern tools for time series analysis}
+\end{textblock}
+%\placefig{.2}{6.1}{width=2.4cm}{tsibble.png}
+%\placefig{2.6}{6.1}{width=2.4cm}{feasts.png}
+%\placefig{5}{6.1}{width=2.4cm}{fable.png}
+\begin{textblock}{7.5}(11.5,7)
+{\fontsize{15}{15}\sf\color[RGB]{45,27,15}\bfseries\raggedright{\insertauthor}}
+\end{textblock}
+\begin{textblock}{7.5}(11.5,7.7)
+{\fontsize{9}{9}\sf\color[RGB]{45,27,15}robjhyndman.com/whyR2021}
+\end{textblock}
+\placefig{11.5}{8.45}{width=3.8cm}{monash_bw}
+}
+
+% My definitions
+\def\E{\text{E}}
+\def\V{\text{Var}}
+\def\bY{\bm{y}}
+\def\by{\bm{y}}
+\def\bS{\bm{S}}
+\def\bG{\bm{G}}
+\def\bW{\bm{W}}
+\def\bSigma{\bm{\Sigma}}
+\def\Var{\text{Var}}
+\def\var{\text{Var}}
+\newcommand{\btwocol}{\begin{multicols}{2}}
+\newcommand{\etwocol}{\end{multicols}}
+\def\pred#1#2#3{\hat{#1}_{#2|#3}}
+\def\damped{$_\text{d}$}
+
+\def\forecast{\begin{alertblock}{}\fontsize{10}{11}\sf
+A forecast is an estimate of the probability distribution of a variable to be observed in the future.
+\end{alertblock}}
+\def\simfutures{\begin{textblock}{2.7}(13,7.7)
+\begin{block}{}\fontsize{10}{11}\sf
+Simulated futures from an ETS model
+\end{block}\end{textblock}}
