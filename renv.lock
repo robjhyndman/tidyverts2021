@@ -568,23 +568,6 @@
       ],
       "Hash": "15e9634c0fcd294799e9b2e929ed1b86"
     },
-    "ggokabeito": {
-      "Package": "ggokabeito",
-      "Version": "0.1.0.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "ggokabeito",
-      "RemoteUsername": "malcolmbarrett",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "3221890f5316f565bdc118b5ab1bbb8044fcdb8c",
-      "Requirements": [
-        "R",
-        "ggplot2",
-        "grDevices"
-      ],
-      "Hash": "d48d6233bb43ef18d7a390a017fa8cc5"
-    },
     "ggplot2": {
       "Package": "ggplot2",
       "Version": "3.4.1",
@@ -1205,7 +1188,7 @@
     },
     "tibble": {
       "Package": "tibble",
-      "Version": "3.1.8",
+      "Version": "3.2.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1220,7 +1203,7 @@
         "utils",
         "vctrs"
       ],
-      "Hash": "56b6934ef0f8c68225949a8672fe1a8f"
+      "Hash": "37695ff125982007d42a59ad10982ff2"
     },
     "tidyr": {
       "Package": "tidyr",
