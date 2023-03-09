@@ -98,6 +98,11 @@ state_colors <- c(
 )
 read_sf("tourism/Tourism_Regions_2020.shp") |>
   rename(State = "STE_NAME16") |>
+  mutate(State = factor(State, levels = c(
+    "Queensland","Northern Territory","Western Australia",
+    "South Australia","New South Wales","Australian Capital Territory",
+    "Victoria","Tasmania"
+  )))
   ggplot() +
   geom_sf(aes(fill = State), alpha = 0.8) +
   theme_void() +
@@ -410,169 +415,12 @@ pcs |> ggplot(aes(x=.fittedPC1, y=.fittedPC2, col=Purpose)) +
 
 # fable: Forecasting
 
-```{r austa, include=FALSE}
-# Grab ABS data
-austa <- readxl::read_excel("data/340101.xls", sheet = "Data1", skip = 9) |>
-  rename(date = `Series ID`, value = A85375847A) |>
-  select(date, value) |>
-  transmute(
-    Month = yearmonth(date),
-    Visitors = value / 1e3
-  ) |>
-  bind_rows(tibble(
-    Month = yearmonth(seq(as.Date("2021-06-01"), by = "1 month", length = 7)),
-    Visitors = NA_real_
-  )) |>
-  as_tsibble(index = Month) |>
-  filter(Month >= yearmonth("2000 Jan"))
-# Fit ETS model
-fit <- austa |>
-  filter(Month < yearmonth("2018 Jan")) |>
-  model(ETS(Visitors))
-# Product forecasts
-fc <- forecast(fit, h = 48) |>
-  mutate(Month = as.Date(Month))
-# Simulate 100 future sample paths
-set.seed(1967)
-sim <- fit |>
-  generate(h = 48, times = 100) |>
-  mutate(
-    replicate = factor(.rep, levels = 1:100, labels = paste("Future", 1:100)),
-    .rep = as.numeric(.rep)
-  ) |>
-  as_tibble() |>
-  mutate(Month = as.Date(Month))
-# Nice colors
-cols <- scale_color_manual(
-  values = c("#D55E00", "#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442", sample(rainbow(93))),
-  breaks = paste("Future", 1:100),
-  name = " "
-)
-# Now build up some plots with alignment
-p1 <- austa |>
-  mutate(Visitors = if_else(Month >= yearmonth("2018 Jan"), NA_real_, Visitors)) |>
-  as_tibble() |>
-  mutate(Month = as.Date(Month)) |>
-  ggplot(aes(x = Month, y = Visitors)) +
-  geom_line() +
-  labs(
-    x = "Month",
-    y = "Thousands of visitors",
-    title = "Total short-term visitors to Australia"
-  ) +
-  scale_x_date(
-    breaks = seq(as.Date("2000-01-01"), by = "5 years", l = 5),
-    labels = paste("Jan", seq(2000, 2020, by = 5)),
-    minor_breaks = seq(as.Date("2001-01-01"), by = "1 year", l = 25)
-  ) +
-  ylim(min(austa$Visitors, sim$.sim, na.rm = TRUE), max(austa$Visitors, sim$.sim, na.rm = TRUE))
-p2 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, color = replicate),
-    data = sim |> filter(.rep <= 1)
-  )
-p3 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, color = replicate),
-    data = sim |> filter(.rep <= 2)
-  )
-p4 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, color = replicate),
-    data = sim |> filter(.rep <= 3)
-  )
-p5 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, color = replicate),
-    data = sim |> filter(.rep <= 10)
-  )
-p6 <- p1 + cols +
-  geom_line(aes(y = .sim, group = replicate, color = replicate), alpha = 0.5, data = sim) +
-  guides(color = "none")
-p7 <- p1 +
-  geom_line(aes(y = .sim, group = replicate, color = replicate), alpha = 0.5, col = "gray", data = sim) +
-  guides(color = "none")
-p8 <- p7 + autolayer(fc, level = c(50, 90))
-p9 <- p8 + coord_cartesian(xlim = as.Date(c("2013-01-01", "2021-08-01"))) +
-  scale_x_date(
-    breaks = seq(as.Date("2000-01-01"), by = "2 years", l = 11),
-    labels = paste("Jan", seq(2000, 2020, by = 2)),
-    minor_breaks = seq(as.Date("2001-01-01"), by = "1 year", l = 25)
-  )
-p10 <- p9 +
-  geom_line(
-    color = "black",
-    data = austa |> filter(Month >= yearmonth("2018 Jan")) |> mutate(Month = as.Date(Month))
-  )
-aligned_plots <- align_patches(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
-
-for (i in seq(10)) {
-  pdf(paste0("figs/austa", i, ".pdf"), height = 3.3, width = 8)
-  print(aligned_plots[[i]])
-  dev.off()
-}
-```
-
-## Random futures
-
-\forecast\pause
-\includegraphics[height=8cm]{austa1}
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa2}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa3}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa4}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa5}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa6}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa7}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa8}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa9}
-\simfutures
-
-## Random futures
-
-\forecast
-\includegraphics[height=8cm]{austa10}
-\simfutures
-
 ## Model fitting
 \fontsize{9}{10}\sf
 
 ```{r holiday-model}
-holiday_fit <- holidays |>
+snowy_fit <- tourism |>
+  filter(Region == "Snowy Mountains") |> 
   model(
     snaive = SNAIVE(Trips),
     naive = NAIVE(Trips),
@@ -583,15 +431,15 @@ holiday_fit <- holidays |>
 
 
 ```{r holiday-model2, echo=FALSE, dependson='holiday-model'}
-holiday_fit
+snowy_fit
 ```
 
 ## Model fitting
 \fontsize{9}{10}\sf
 
 ```{r holiday-model3, dependson='holiday-model'}
-holiday_fit |>
-  filter(State == "NSW") |>
+snowy_fit |>
+  filter(Purpose == "Holidays") |> 
   select(arima) |>
   report()
 ```
@@ -600,15 +448,15 @@ holiday_fit |>
 \fontsize{9}{10}\sf
 
 ```{r holiday-model6, dependson='holiday-model'}
-augment(holiday_fit)
+augment(snowy_fit)
 ```
 
 ## Ljung-Box test
 \fontsize{9}{10}\sf
 
 ```{r lbtest, echo=TRUE, fig.height=4, warning = FALSE}
-augment(holiday_fit) |>
-  filter(State == "NSW", .model == "arima") |>
+augment(snowy_fit) |>
+  filter(Purpose == "Holidays", .model == "arima") |>
   features(.resid, ljung_box, dof = 2, lag = 8)
 ```
 
@@ -616,8 +464,7 @@ augment(holiday_fit) |>
 \fontsize{9}{10}\sf
 
 ```{r ggtsresiduals, echo=TRUE, warning = FALSE}
-holiday_fit |>
-  filter(State == "NSW") |>
+snowy_fit |>
   select(arima) |>
   gg_tsresiduals()
 ```
@@ -627,22 +474,21 @@ holiday_fit |>
 \fontsize{9}{9}\sf
 
 ```{r holiday-fc, echo = TRUE, dependson='holiday-model'}
-holiday_fc <- holiday_fit |>
+snowy_fc <- snowy_fit |>
   forecast(h = "2 years")
 ```
 
 ```{r holiday-fbl, echo = FALSE, dependson='holiday-fc'}
-print(holiday_fc, n = 10)
+print(snowy_fc, n = 10)
 ```
 
 ## Visualising forecasts
 \fontsize{9}{9}\sf
 
 ```{r holiday-fc-plot, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
-holiday_fc |>
-  filter(State == "NSW") |>
+snowy_fc |>
   autoplot(holidays, level = NULL) +
-  labs(title = "Holidays in NSW", y = "Thousands of visitors") +
+  labs(title = "Snowy Mountain Holidays", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
@@ -651,7 +497,7 @@ holiday_fc |>
 \fontsize{9}{9}\sf
 
 ```{r holiday-fc-plot2, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
-holiday_fc |>
+snowy_fc |>
   filter(State == "NSW", .model == "arima") |>
   autoplot(holidays) +
   labs(title = "Holidays in NSW", y = "Thousands of visitors") +
