@@ -63,22 +63,31 @@ tourism <- tsibble::tourism |>
 
 \begin{textblock}{3.8}(11,0)\begin{alertblock}{}\Large\textbf{tidyverts.org}\end{alertblock}\end{textblock}
 
-\placefig{10}{1.4}{width=2.5cm}{tsibble.png}
-\placefig{10}{4.4}{width=2.5cm}{feasts.png}
-\placefig{10}{7.4}{width=2.5cm}{fable.png}
-
-\begin{textblock}{8}(0.4,1.2)
+\placefig{11}{1.6}{width=2.5cm}{tsibble.png}
+\placefig{12.25}{3.75}{width=2.5cm}{feasts.png}
+\placefig{11}{5.9}{width=2.5cm}{fable.png}
+  
+\begin{textblock}{8}(0.4,1.7)
 \fontsize{8}{9}\sf
 
-```r
-library(fpp3)
-```
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(fpp3)}
+\end{Highlighting}
+\end{Shaded}
 
 \vspace*{-0.4cm}
 \begin{alltt}
 \input{startuppdf.txt}
 \end{alltt}
 \end{textblock}
+
+
+\vspace*{10cm}
+
+```r
+# Prevent error
+```
 
 ## Australian tourism regions
 
@@ -447,6 +456,8 @@ fit |>
   report()
 ```
 
+\vspace*{10cm}
+
 ## Model fitting
 \fontsize{9}{10}\sf
 
@@ -462,6 +473,8 @@ augment(fit) |>
   filter(Purpose == "Holiday", Region == "Snowy Mountains", .model == "arima") |>
   features(.resid, ljung_box, dof = 3, lag = 8)
 ```
+
+\vspace*{10cm}
 
 ## `gg_tsresiduals()` function
 \fontsize{9}{9}\sf
@@ -493,7 +506,7 @@ print(fc, n = 10)
 fc |>
   filter(Purpose == "Holiday", Region == "Snowy Mountains") |> 
   autoplot(training, level = NULL) +
-  labs(title = "Snowy Mountain Holidays", y = "Thousands of visitors") +
+  labs(title = "Snowy Mountains Holidays", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
@@ -505,7 +518,7 @@ fc |>
 fc |>
   filter(Purpose == "Holiday", Region == "Snowy Mountains", .model == "arima") |>
   autoplot(training) +
-  labs(title = "Holidays in Snowy Mountains", y = "Thousands of visitors") +
+  labs(title = "Snowy Mountains Holidays", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
@@ -522,12 +535,12 @@ fc |> hilo(level = 95)
 fc |>
   filter(Purpose == "Holiday", Region == "Snowy Mountains") |> 
   autoplot(tourism, level = NULL) +
-  labs(title = "Snowy Mountain Holidays", y = "Thousands of visitors") +
+  labs(title = "Snowy Mountains Holidays", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
 ## Measures of forecast accuracy
-\fontsize{10}{10}\sf
+\fontsize{9}{10}\sf
 
 ```{r holidays-train-accuracy}
 fc |> 
@@ -535,13 +548,16 @@ fc |>
 ```
 
 ## Measures of forecast accuracy
-\fontsize{10}{10}\sf
+\fontsize{9}{10}\sf
 
 ```{r holidays-train-accuracy2}
 fc |> 
   accuracy(tourism) |> 
-  summarise(RMSSE = sqrt(mean(RMSSE^2)), .by=".model")
+  group_by(.model) |> 
+  summarise(RMSSE = sqrt(mean(RMSSE^2)))
 ```
+
+\vspace*{10cm}
 
 # fable: Forecast reconciliation
 
@@ -675,7 +691,7 @@ tourism |>
   aggregate_key(Purpose * (State / Region), Trips = sum(Trips)) |>
   model(ets = ETS(Trips)) |>
   reconcile(ets_adjusted = min_trace(ets)) |>
-  forecast(h = 2)
+  forecast(h = "2 years")
 ```
 
 ## Hierarchical and grouped time series
@@ -782,7 +798,7 @@ where $\bW_h$ is the $h$-step base forecast error covariance matrix.
  * Assume $\bW_h = k_h\bW_1$ and estimate it (GLS) [`min_trace(method='shrink')` (the default)]
 
 ## Example: Australian tourism
-\fontsize{11}{11}\sf
+\fontsize{9}{9}\sf
 
 ```{r fctourism}
 tourism_agg <- tourism |>
@@ -807,20 +823,25 @@ fc <- tourism_agg |>
 ```
 
 ## Forecast evaluation
-\fontsize{10}{11}\sf
+\fontsize{9}{10}\sf
 
 ```{r fcaccuracy, dependson='fctourismcomb'}
-accuracy(fc, tourism_agg)
+fc |> 
+  accuracy(tourism_agg)
 ```
 
 ## Forecast evaluation
-\fontsize{11}{11}\sf
+\fontsize{9}{10}\sf
 
 ```{r fcaccuracy2, dependson='fctourismcomb'}
-accuracy(fc, tourism_agg) |>
-  summarise(RMSSE = sqrt(mean(RMSSE^2)), by=".model") |>
+fc |>
+  accuracy(tourism_agg) |> 
+  group_by(.model) |> 
+  summarise(RMSSE = sqrt(mean(RMSSE^2))) |>
   arrange(RMSSE)
 ```
+
+\vspace*{10cm}
 
 ## More information
 \fontsize{18}{20}\sf
