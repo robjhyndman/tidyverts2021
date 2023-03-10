@@ -417,7 +417,7 @@ pcs |> ggplot(aes(x=.fittedPC1, y=.fittedPC2, col=Purpose)) +
 ## Model fitting
 \fontsize{9}{9}\sf
 
-```{r holiday-model}
+```{r fit-models}
 training <- tourism |>
   filter(year(Quarter) <= 2015) 
 fit <- training |> 
@@ -431,7 +431,7 @@ fit <- training |>
 
 \fontsize{8}{8}\sf
 
-```{r show-models, echo=FALSE, dependson='holiday-model'}
+```{r show-models, echo=FALSE, dependson='fit-models'}
 options(width=90)
 fit
 options(width=80)
@@ -440,7 +440,7 @@ options(width=80)
 ## Model fitting
 \fontsize{9}{10}\sf
 
-```{r holiday-model3, dependson='holiday-model'}
+```{r fit-models3, dependson='fit-models'}
 fit |>
   filter(Purpose == "Holiday", Region == "Snowy Mountains") |> 
   select(arima) |>
@@ -450,7 +450,7 @@ fit |>
 ## Model fitting
 \fontsize{9}{10}\sf
 
-```{r holiday-model6, dependson='holiday-model'}
+```{r fit-models6, dependson='fit-models'}
 augment(fit)
 ```
 
@@ -477,7 +477,7 @@ fit |>
 
 \fontsize{9}{9}\sf
 
-```{r holiday-fc, echo = TRUE, dependson='holiday-model'}
+```{r holiday-fc, echo = TRUE, dependson='fit-models'}
 fc <- fit |>
   forecast(h = "2 years")
 ```
