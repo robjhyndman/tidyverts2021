@@ -36,7 +36,7 @@ scale_fill_discrete <- function(...) {
 
 options(
   digits = 3,
-  width = 75
+  width = 80
 )
 
 # Neater data sets
@@ -63,12 +63,12 @@ tourism <- tsibble::tourism |>
 
 \begin{textblock}{3.8}(11,0)\begin{alertblock}{}\Large\textbf{tidyverts.org}\end{alertblock}\end{textblock}
 
-\placefig{3}{1.4}{width=2.5cm}{tsibble.png}
-\placefig{5.5}{1.4}{width=2.5cm}{tsibbledata.png}
-\placefig{8}{1.4}{width=2.5cm}{feasts.png}
-\placefig{10.5}{1.4}{width=2.5cm}{fable.png}
+\placefig{10}{1.4}{width=2.5cm}{tsibble.png}
+\placefig{10}{4.4}{width=2.5cm}{feasts.png}
+\placefig{10}{7.4}{width=2.5cm}{fable.png}
 
-\pause\vspace*{2.9cm}\fontsize{7}{8}\sf
+\begin{textblock}{8}(0.4,1.2)
+\fontsize{8}{9}\sf
 
 ```r
 library(fpp3)
@@ -78,8 +78,7 @@ library(fpp3)
 \begin{alltt}
 \input{startuppdf.txt}
 \end{alltt}
-
-
+\end{textblock}
 
 ## Australian tourism regions
 
@@ -102,7 +101,7 @@ read_sf("tourism/Tourism_Regions_2020.shp") |>
     "Queensland","Northern Territory","Western Australia",
     "South Australia","New South Wales","Australian Capital Territory",
     "Victoria","Tasmania"
-  )))
+  ))) |> 
   ggplot() +
   geom_sf(aes(fill = State), alpha = 0.8) +
   theme_void() +
@@ -258,7 +257,7 @@ most_seasonal <- tourism |>
 
 \pause\vspace*{-0.3cm}
 
-```{r extreme2, fig.height=2}
+```{r extreme2, fig.height=2.03}
 tourism |>
   right_join(most_seasonal, by = c("State", "Region", "Purpose")) |>
   ggplot(aes(x = Quarter, y = Trips)) +
@@ -322,7 +321,7 @@ endpdf()
 ```
 
 ## Feature extraction and statistics
-\fontsize{9}{9}\sf
+\fontsize{9}{8}\sf
 
 ```{r tourismfeatures, eval=FALSE}
 tourism_features <- tourism |>
@@ -340,7 +339,7 @@ All features from the feasts package
 \end{textblock}
 
 ## Feature extraction and statistics
-\fontsize{9}{9}\sf
+\fontsize{9}{8}\sf
 
 ```{r pcatable}
 pcs <- tourism_features |>
@@ -416,11 +415,12 @@ pcs |> ggplot(aes(x=.fittedPC1, y=.fittedPC2, col=Purpose)) +
 # fable: Forecasting
 
 ## Model fitting
-\fontsize{9}{10}\sf
+\fontsize{9}{9}\sf
 
 ```{r holiday-model}
-snowy_fit <- tourism |>
-  filter(Region == "Snowy Mountains") |> 
+training <- tourism |>
+  filter(year(Quarter) <= 2015) 
+fit <- training |> 
   model(
     snaive = SNAIVE(Trips),
     naive = NAIVE(Trips),
@@ -429,17 +429,20 @@ snowy_fit <- tourism |>
   )
 ```
 
+\fontsize{8}{8}\sf
 
-```{r holiday-model2, echo=FALSE, dependson='holiday-model'}
-snowy_fit
+```{r show-models, echo=FALSE, dependson='holiday-model'}
+options(width=90)
+fit
+options(width=80)
 ```
 
 ## Model fitting
 \fontsize{9}{10}\sf
 
 ```{r holiday-model3, dependson='holiday-model'}
-snowy_fit |>
-  filter(Purpose == "Holidays") |> 
+fit |>
+  filter(Purpose == "Holiday", Region == "Snowy Mountains") |> 
   select(arima) |>
   report()
 ```
@@ -448,23 +451,24 @@ snowy_fit |>
 \fontsize{9}{10}\sf
 
 ```{r holiday-model6, dependson='holiday-model'}
-augment(snowy_fit)
+augment(fit)
 ```
 
 ## Ljung-Box test
 \fontsize{9}{10}\sf
 
 ```{r lbtest, echo=TRUE, fig.height=4, warning = FALSE}
-augment(snowy_fit) |>
-  filter(Purpose == "Holidays", .model == "arima") |>
-  features(.resid, ljung_box, dof = 2, lag = 8)
+augment(fit) |>
+  filter(Purpose == "Holiday", Region == "Snowy Mountains", .model == "arima") |>
+  features(.resid, ljung_box, dof = 3, lag = 8)
 ```
 
 ## `gg_tsresiduals()` function
-\fontsize{9}{10}\sf
+\fontsize{9}{9}\sf
 
 ```{r ggtsresiduals, echo=TRUE, warning = FALSE}
-snowy_fit |>
+fit |>
+  filter(Purpose == "Holiday", Region == "Snowy Mountains") |> 
   select(arima) |>
   gg_tsresiduals()
 ```
@@ -474,20 +478,21 @@ snowy_fit |>
 \fontsize{9}{9}\sf
 
 ```{r holiday-fc, echo = TRUE, dependson='holiday-model'}
-snowy_fc <- snowy_fit |>
+fc <- fit |>
   forecast(h = "2 years")
 ```
 
 ```{r holiday-fbl, echo = FALSE, dependson='holiday-fc'}
-print(snowy_fc, n = 10)
+print(fc, n = 10)
 ```
 
 ## Visualising forecasts
 \fontsize{9}{9}\sf
 
 ```{r holiday-fc-plot, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
-snowy_fc |>
-  autoplot(holidays, level = NULL) +
+fc |>
+  filter(Purpose == "Holiday", Region == "Snowy Mountains") |> 
+  autoplot(training, level = NULL) +
   labs(title = "Snowy Mountain Holidays", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
@@ -497,10 +502,10 @@ snowy_fc |>
 \fontsize{9}{9}\sf
 
 ```{r holiday-fc-plot2, warning=FALSE, message=FALSE, fig.height=2.9, dependson='holiday-fc'}
-snowy_fc |>
-  filter(State == "NSW", .model == "arima") |>
-  autoplot(holidays) +
-  labs(title = "Holidays in NSW", y = "Thousands of visitors") +
+fc |>
+  filter(Purpose == "Holiday", Region == "Snowy Mountains", .model == "arima") |>
+  autoplot(training) +
+  labs(title = "Holidays in Snowy Mountains", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
@@ -508,49 +513,16 @@ snowy_fc |>
 \fontsize{9}{10}\sf
 
 ```{r holiday-fc-interval, dependson='holiday-fc'}
-holiday_fc |> hilo(level = 95)
+fc |> hilo(level = 95)
 ```
-
-# fable: Evaluating forecast accuracy
-
-## Training and test sets
-
-```{r traintest, fig.height=1, echo=FALSE, cache=TRUE}
-train <- 1:18
-test <- 19:24
-par(mar = c(0, 0, 0, 0))
-plot(0, 0, xlim = c(0, 26), ylim = c(0, 2), xaxt = "n", yaxt = "n", bty = "n", xlab = "", ylab = "", type = "n")
-arrows(0, 0.5, 25, 0.5, 0.05)
-points(train, train * 0 + 0.5, pch = 19, col = "#0072B2")
-points(test, test * 0 + 0.5, pch = 19, col = "#D55E00")
-text(26, 0.5, "time")
-text(10, 1, "Training data", col = "#0072B2")
-text(21, 1, "Test data", col = "#D55E00")
-```
-
--   A model which fits the training data well will not necessarily forecast well.
--   A perfect fit can always be obtained by using a model with enough parameters.
--   Over-fitting a model to data is just as bad as failing to identify a systematic pattern in the data.
-  * The test set must not be used for *any* aspect of model development or calculation of forecasts.
-  * Forecast accuracy is based only on the test set.
 
 ## Measures of forecast accuracy
 
 ```{r holidays-fc-1, echo=FALSE, fig.height=4}
-nsw_holidays <- holidays |> filter(State == "NSW")
-train <- nsw_holidays |> filter(year(Quarter) <= 2015)
-nsw_fit <- train |>
-  model(
-    snaive = SNAIVE(Trips),
-    naive = NAIVE(Trips),
-    ets = ETS(Trips),
-    arima = ARIMA(Trips)
-  )
-nsw_fc <- nsw_fit |>
-  forecast(h = 8)
-nsw_fc |>
-  autoplot(nsw_holidays, level = NULL) +
-  labs(title = "Holidays in Victoria", y = "Thousands of visitors") +
+fc |>
+  filter(Purpose == "Holiday", Region == "Snowy Mountains") |> 
+  autoplot(tourism, level = NULL) +
+  labs(title = "Snowy Mountain Holidays", y = "Thousands of visitors") +
   guides(color = guide_legend(title = "Forecast"))
 ```
 
@@ -558,7 +530,17 @@ nsw_fc |>
 \fontsize{10}{10}\sf
 
 ```{r holidays-train-accuracy}
-accuracy(nsw_fc, holidays)
+fc |> 
+  accuracy(tourism)
+```
+
+## Measures of forecast accuracy
+\fontsize{10}{10}\sf
+
+```{r holidays-train-accuracy2}
+fc |> 
+  accuracy(tourism) |> 
+  summarise(RMSSE = sqrt(mean(RMSSE^2)), .by=".model")
 ```
 
 # fable: Forecast reconciliation
@@ -800,7 +782,7 @@ where $\bW_h$ is the $h$-step base forecast error covariance matrix.
  * Assume $\bW_h = k_h\bW_1$ and estimate it (GLS) [`min_trace(method='shrink')` (the default)]
 
 ## Example: Australian tourism
-\fontsize{12}{13}\sf
+\fontsize{11}{11}\sf
 
 ```{r fctourism}
 tourism_agg <- tourism |>
@@ -808,38 +790,7 @@ tourism_agg <- tourism |>
     Trips = sum(Trips)
   )
 fc <- tourism_agg |>
-  filter_index(. ~ "2015 Q4") |>
-  model(ets = ETS(Trips)) |>
-  reconcile(ets_adjusted = min_trace(ets)) |>
-  forecast(h = "2 years")
-```
-
-## Example: Australian tourism
-\fontsize{10}{11}\sf
-
-```{r fctourism2, dependson='fctourism'}
-fc |>
-  filter(is_aggregated(Purpose) & is_aggregated(State)) |>
-  autoplot(tourism_agg, level = 95)
-```
-
-## Example: Australian tourism
-\fontsize{10}{11}\sf
-
-```{r fctourism3, dependson='fctourism'}
-fc |>
-  filter(is_aggregated(Purpose) & State == "NSW" &
-    is_aggregated(Region)) |>
-  autoplot(tourism_agg, level = 95)
-```
-
-
-## Example: Australian  tourism
-\fontsize{10}{10}\sf
-
-```{r fctourismcomb}
-fc <- tourism_agg |>
-  filter_index(. ~ "2015 Q4") |>
+  filter(year(Quarter) <= 2015) |>
   model(
     ets = ETS(Trips),
     arima = ARIMA(Trips)
@@ -859,18 +810,16 @@ fc <- tourism_agg |>
 \fontsize{10}{11}\sf
 
 ```{r fcaccuracy, dependson='fctourismcomb'}
-fc |> accuracy(tourism_agg)
+accuracy(fc, tourism_agg)
 ```
 
 ## Forecast evaluation
 \fontsize{11}{11}\sf
 
 ```{r fcaccuracy2, dependson='fctourismcomb'}
-fc |>
-  accuracy(tourism_agg) |>
-  group_by(.model) |>
-  summarise(MASE = mean(MASE)) |>
-  arrange(MASE)
+accuracy(fc, tourism_agg) |>
+  summarise(RMSSE = sqrt(mean(RMSSE^2)), by=".model") |>
+  arrange(RMSSE)
 ```
 
 ## More information
@@ -878,7 +827,7 @@ fc |>
 
  * Slides and papers: **robjhyndman.com**
  * Packages: **tidyverts.org**
- * Forecasting textbook using fable package: **OTexts.com/fpp3**
+ * Forecasting textbook using tsibble, feasts and fable packages: **OTexts.com/fpp3**
 
 \begin{textblock}{8}(7.6,4.8)
 \begin{alertblock}{Find me at \dots}
